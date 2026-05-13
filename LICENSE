@@ -1,0 +1,33 @@
+arxify.ai · Source-Available License
+
+Copyright (c) 2026 mguozhen
+
+The source code in this repository (the "SaaS Layer") is made available for
+inspection, learning, and contribution. The following terms govern use:
+
+1. PERMITTED USES
+   - Read, study, and discuss the source code.
+   - Run the code locally for personal evaluation and learning.
+   - Submit pull requests, issues, and forks for the purpose of contribution.
+
+2. RESTRICTIONS
+   - You may NOT run this code as a competing service or paid offering without
+     a separate commercial license from the copyright holder.
+   - You may NOT redistribute compiled, hosted, or derivative deployments.
+   - You may NOT use this code to host a service that competes with arxify.ai.
+
+3. CONTRIBUTIONS
+   - By submitting a pull request you grant the copyright holder a perpetual,
+     worldwide, royalty-free license to use, modify, and incorporate your
+     contribution under any license.
+
+4. SEPARATE LICENSES
+   - The core `ai-researcher` pipeline (https://github.com/mguozhen/ai-researcher)
+     is MIT-licensed and may be used freely under those terms.
+   - Upstream dependencies (AI-Scientist-v2, MiroThinker, Next.js, FastAPI,
+     etc.) retain their original licenses.
+
+5. NO WARRANTY
+   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+For commercial licensing inquiries: hello@arxify.ai
