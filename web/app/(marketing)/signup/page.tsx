@@ -40,6 +40,10 @@ export default function SignupPage() {
       }
       const data = await r.json();
       setPosition(data.position);
+      // store token for /dashboard access
+      if (typeof window !== "undefined" && data.token) {
+        localStorage.setItem("arxify_token", data.token);
+      }
       setSubmitted(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -149,12 +153,18 @@ export default function SignupPage() {
             <p className="text-[#6e6a5d] mb-6 italic">
               We&apos;ll email <strong>{email}</strong> when beta opens.
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
               <Link
-                href="/try"
+                href="/dashboard"
                 className="bg-[#1f1c17] text-[#fafaf7] px-6 py-3 rounded-full font-medium hover:bg-[#b85a3a] transition"
               >
-                Try the demo →
+                Go to dashboard →
+              </Link>
+              <Link
+                href="/try"
+                className="border border-[#1f1c17] px-6 py-3 rounded-full font-medium hover:bg-[#1f1c17] hover:text-[#fafaf7] transition"
+              >
+                Try the demo
               </Link>
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Just joined the @arxify.io waitlist — AI researcher that gets you from idea to paper draft. github.com/mguozhen/ai-researcher")}`}

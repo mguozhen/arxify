@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import auth, billing, projects, runs, artifacts, health, demo, waitlist
+from api.routes import auth, billing, projects, runs, artifacts, health, demo, waitlist, workspace
 
 
 @asynccontextmanager
@@ -34,6 +34,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         os.environ.get("WEB_ORIGIN", "http://localhost:3000"),
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://arxify.io",
         "https://arxify.ai",
     ],
     allow_credentials=True,
@@ -49,3 +52,4 @@ app.include_router(artifacts.router, prefix="/api/artifacts", tags=["artifacts"]
 app.include_router(billing.router, prefix="/api/billing", tags=["billing"])
 app.include_router(demo.router, prefix="/api/demo", tags=["demo"])
 app.include_router(waitlist.router, prefix="/api/waitlist", tags=["waitlist"])
+app.include_router(workspace.router, prefix="/api/workspace", tags=["workspace"])
