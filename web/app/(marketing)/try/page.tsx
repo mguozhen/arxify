@@ -22,6 +22,15 @@ type DemoResponse = {
   cost_credits: number;
 };
 
+type Critique = {
+  novelty_score: number;
+  top_weaknesses: string[];
+  missing_anchors: string[];
+  reviewer2_kill_shot: string;
+  improvement: string;
+  verdict: "ACCEPT" | "MAJOR_REVISION" | "REJECT" | string;
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 const EXAMPLE = `我是 HKU DBA 学生，研究 LLM 客服系统。我们公司有多租户 SaaS 平台，280 个企业客户、19 亿条客服对话、870 万次 AI→人工 handoff 事件，数据覆盖 2024 年至今。我想找一个能在 6 个月内做完的研究方向，目标顶刊（JM/MarkSci/MISQ）。已经写完一篇 H3 handoff agency paradox 的 paper。`;
@@ -148,6 +157,28 @@ export default function TryPage() {
 }
 
 function IdeaCardView({ idea, index }: { idea: IdeaCard; index: number }) {
+  const [critique, setCritique] = useState<Critique | null>(null);
+  const [critLoading, setCritLoading] = useState(false);
+  const [critError, setCritError] = useState<string | null>(null);
+
+  async function runCritique() {
+    setCritLoading(true);
+    setCritError(null);
+    try {
+      const r = await fetch(`${API_URL}/api/demo/critique`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(idea),
+      });
+      if (!r.ok) throw new Error(`API ${r.status}: ${await r.text()}`);
+      setCritique(await r.json());
+    } catch (e) {
+      setCritError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCritLoading(false);
+    }
+  }
+
   return (
     <div className="border border-[#d3cdbe] rounded-2xl bg-white p-6">
       <div className="flex items-start justify-between mb-3">
@@ -160,7 +191,7 @@ function IdeaCardView({ idea, index }: { idea: IdeaCard; index: number }) {
         </div>
       </div>
       <h3 className="text-xl font-bold mb-2 leading-snug">{idea.title}</h3>
-      <p className="italic text-[#b85a3a] mb-4">"{idea.paradox}"</p>
+      <p className="italic text-[#b85a3a] mb-4">&ldquo;{idea.paradox}&rdquo;</p>
       <dl className="space-y-3 text-sm">
         <div>
           <dt className="text-xs font-mono uppercase tracking-widest text-[#6e6a5d]">Hypothesis</dt>
@@ -175,6 +206,80 @@ function IdeaCardView({ idea, index }: { idea: IdeaCard; index: number }) {
           <dd className="text-[#1f1c17]">{idea.theory_anchor}</dd>
         </div>
       </dl>
+
+      <div className="mt-5 pt-4 border-t border-[#ece5d3]">
+        {!critique && !critLoading && (
+          <button
+            onClick={runCritique}
+            className="text-sm font-mono text-[#b85a3a] hover:text-[#1f1c17] uppercase tracking-widest"
+          >
+            ⚡ Get reviewer-2 critique →
+          </button>
+        )}
+        {critLoading && (
+          <div className="text-sm font-mono text-[#6e6a5d] italic">
+            Channeling reviewer-2 brutality… (~15s)
+          </div>
+        )}
+        {critError && (
+          <div className="text-sm text-red-700">{critError}</div>
+        )}
+        {critique && (
+          <CritiqueView c={critique} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CritiqueView({ c }: { c: Critique }) {
+  const verdictColor =
+    c.verdict === "ACCEPT" ? "bg-green-100 text-green-900 border-green-300" :
+    c.verdict === "REJECT" ? "bg-red-100 text-red-900 border-red-300" :
+    "bg-amber-100 text-amber-900 border-amber-300";
+
+  return (
+    <div className="bg-[#f3eee2] rounded-xl p-5 mt-3 border border-[#ece5d3]">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs font-mono uppercase tracking-widest text-[#1f1c17]">
+          DEEP CRITIQUE
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono text-[#6e6a5d]">Novelty</span>
+          <span className="font-bold text-2xl text-[#b85a3a]">
+            {c.novelty_score}<span className="text-sm text-[#6e6a5d]">/10</span>
+          </span>
+          <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${verdictColor}`}>
+            {c.verdict}
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-3 text-sm">
+        <div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#6e6a5d] mb-1">Top Weaknesses</div>
+          <ul className="list-decimal pl-5 space-y-1">
+            {c.top_weaknesses.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
+        </div>
+
+        <div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#6e6a5d] mb-1">Missing Anchors</div>
+          <ul className="list-disc pl-5 space-y-1 text-[#1f1c17]">
+            {c.missing_anchors.map((a, i) => <li key={i} className="italic">{a}</li>)}
+          </ul>
+        </div>
+
+        <div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#6e6a5d] mb-1">Reviewer 2&apos;s Kill Shot</div>
+          <p className="italic border-l-2 border-red-400 pl-3">{c.reviewer2_kill_shot}</p>
+        </div>
+
+        <div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#6e6a5d] mb-1">One Concrete Fix</div>
+          <p className="border-l-2 border-[#b85a3a] pl-3">{c.improvement}</p>
+        </div>
+      </div>
     </div>
   );
 }

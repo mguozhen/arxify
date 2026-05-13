@@ -106,7 +106,6 @@ async def call_claude(prompt: str) -> dict:
 
 @router.post("/ideation", response_model=DemoIdeationResponse)
 async def demo_ideation(body: DemoIdeationRequest, request: Request):
-    # Very rough rate-limit hint — TODO: real IP rate limiting in production
     prompt = PROMPT_TEMPLATE.format(input=body.input.strip())
     parsed = await call_claude(prompt)
     if "ideas" not in parsed or not isinstance(parsed["ideas"], list):
@@ -117,3 +116,52 @@ async def demo_ideation(body: DemoIdeationRequest, request: Request):
         model_used="claude-sonnet-4-5",
         cost_credits=50,  # demo cost
     )
+
+
+# ─── DeepCritique (Claude-fast) ──────────────────────────────────────────
+
+class CritiqueRequest(BaseModel):
+    title: str
+    paradox: str
+    hypothesis: str
+    identification: str
+    theory_anchor: str
+    journal_target: str
+
+
+class CritiqueResponse(BaseModel):
+    novelty_score: int = Field(ge=1, le=10)
+    top_weaknesses: list[str]
+    missing_anchors: list[str]
+    reviewer2_kill_shot: str
+    improvement: str
+    verdict: str  # ACCEPT | MAJOR_REVISION | REJECT
+
+
+CRITIQUE_PROMPT = """You are reviewer 2 at MISQ / Mgmt Sci / JM. The candidate proposes this research idea:
+
+TITLE: {title}
+PARADOX: {paradox}
+HYPOTHESIS: {hypothesis}
+IDENTIFICATION: {identification}
+THEORY ANCHOR: {theory_anchor}
+TARGET JOURNAL: {journal_target}
+
+Provide a BRUTAL critique. Be specific. Return ONLY JSON in this schema:
+
+{{
+  "novelty_score": 1-10,
+  "top_weaknesses": ["3 specific identification or theoretical weaknesses, one per item"],
+  "missing_anchors": ["2-3 canonical papers they MUST cite (Author Year, Journal)"],
+  "reviewer2_kill_shot": "the single sharpest critique that would kill this paper, one paragraph",
+  "improvement": "the single concrete change that would strengthen this paper 50%+",
+  "verdict": "ACCEPT" or "MAJOR_REVISION" or "REJECT"
+}}
+"""
+
+
+@router.post("/critique", response_model=CritiqueResponse)
+async def demo_critique(body: CritiqueRequest):
+    prompt = CRITIQUE_PROMPT.format(**body.model_dump())
+    parsed = await call_claude(prompt)
+    return CritiqueResponse(**parsed)
