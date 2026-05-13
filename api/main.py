@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import auth, billing, projects, runs, artifacts, health
+from api.routes import auth, billing, projects, runs, artifacts, health, demo
 
 
 @asynccontextmanager
@@ -47,3 +47,4 @@ app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(runs.router, prefix="/api/runs", tags=["runs"])
 app.include_router(artifacts.router, prefix="/api/artifacts", tags=["artifacts"])
 app.include_router(billing.router, prefix="/api/billing", tags=["billing"])
+app.include_router(demo.router, prefix="/api/demo", tags=["demo"])
