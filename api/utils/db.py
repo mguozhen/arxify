@@ -70,8 +70,10 @@ def init() -> None:
           journal_target TEXT NOT NULL,
           feasibility_6mo INTEGER NOT NULL DEFAULT 3,
           ab_test_difficulty INTEGER NOT NULL DEFAULT 3,
-          status TEXT NOT NULL DEFAULT 'candidate',  -- candidate | shortlisted | main | future
+          status TEXT NOT NULL DEFAULT 'candidate',
           notes TEXT,
+          proposal_json TEXT,           -- cached full-proposal expansion (JSON)
+          proposal_generated_at TEXT,
           created_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_hyp_ws ON hypotheses(workspace_id);

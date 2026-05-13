@@ -37,6 +37,8 @@ class Hypothesis(BaseModel):
     ab_test_difficulty: int
     status: str
     notes: str | None
+    has_proposal: bool = False
+    proposal_generated_at: str | None = None
 
 
 class DataSource(BaseModel):
@@ -99,12 +101,223 @@ def get_my_workspace(token: str):
             (ws_id,),
         ).fetchall()
 
+    def _hyp_row(h) -> Hypothesis:
+        d = dict(h)
+        d["has_proposal"] = bool(d.pop("proposal_json", None))
+        d.pop("workspace_id", None)
+        d.pop("created_at", None)
+        return Hypothesis(**d)
+
     return WorkspaceFull(
         workspace=Workspace(**dict(ws_row)),
-        hypotheses=[Hypothesis(**dict(h)) for h in hyps],
+        hypotheses=[_hyp_row(h) for h in hyps],
         data_sources=[DataSource(**dict(d)) for d in dss],
         chat=[ChatMessage(**dict(m)) for m in chat],
     )
+
+
+# ─── Hypothesis detail + proposal generation ─────────────────────────────
+
+class ProposalSection(BaseModel):
+    one_line_question: str
+    why_top_tier: list[str]            # 3-5 bullets
+    why_solvea_exclusive: list[str]    # 3-5 bullets
+    experiment_design: dict             # {treatment_arms, randomization, duration}
+    outcomes: dict                       # {primary: [...], secondary: [...]}
+    pre_registered_hypotheses: list[dict]  # [{id, statement}]
+    sample_size: dict                    # {per_arm, total, power, mde, weeks}
+    implementation: dict                  # {engineering_days, ops, cost_usd}
+    journal_targets: list[dict]          # [{tier, journal, reason}]
+    theory_anchors: list[dict]           # [{theory, citation, role}]
+    risks: list[dict]                    # [{risk, mitigation}]
+    elevator_pitches: dict               # {lin, zhou, cai}
+
+
+class HypothesisDetail(BaseModel):
+    hypothesis: Hypothesis
+    proposal: ProposalSection | None
+    raw_title: str
+    raw_paradox: str
+    raw_hypothesis: str
+    raw_identification: str
+    raw_theory_anchor: str
+    raw_journal_target: str
+    notes: str | None
+
+
+@router.get("/hypotheses/{code}", response_model=HypothesisDetail)
+def get_hypothesis(code: str, token: str):
+    user = _user_from_token(token)
+    with conn() as c:
+        ws_row = c.execute(
+            "SELECT id FROM workspaces WHERE owner_email=? LIMIT 1", (user["email"],)
+        ).fetchone()
+        if not ws_row:
+            raise HTTPException(404, "No workspace")
+        row = c.execute(
+            "SELECT * FROM hypotheses WHERE workspace_id=? AND code=?",
+            (ws_row["id"], code),
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, f"Hypothesis {code} not found")
+    d = dict(row)
+    proposal_json = d.pop("proposal_json", None)
+    proposal_obj = None
+    if proposal_json:
+        try:
+            proposal_obj = ProposalSection(**json.loads(proposal_json))
+        except Exception:
+            proposal_obj = None
+    d.pop("workspace_id", None)
+    d.pop("created_at", None)
+    d["has_proposal"] = bool(proposal_json)
+
+    return HypothesisDetail(
+        hypothesis=Hypothesis(**d),
+        proposal=proposal_obj,
+        raw_title=row["title"],
+        raw_paradox=row["paradox"],
+        raw_hypothesis=row["hypothesis"],
+        raw_identification=row["identification"],
+        raw_theory_anchor=row["theory_anchor"],
+        raw_journal_target=row["journal_target"],
+        notes=row["notes"],
+    )
+
+
+GENERATE_PROPOSAL_PROMPT = """You are helping Hunter (郭振, HKU DBA candidate) expand a one-paragraph research direction into a full proposal slide deck, following his established 开题报告 (proposal) framework. The output will become a 13-slide deck for advisor meetings.
+
+EXISTING DATA FOR THIS DIRECTION:
+- Code: {code}
+- Title: {title}
+- Paradox: {paradox}
+- Hypothesis: {hypothesis}
+- Identification: {identification}
+- Theory anchor: {theory_anchor}
+- Journal target: {journal_target}
+- Feasibility (6mo): {feasibility_6mo}/5
+- A/B difficulty: {ab_test_difficulty}/5  (1=easiest A/B, 5=cannot A/B)
+- Notes: {notes}
+
+HUNTER'S CONTEXT:
+- 11 data sources (Solvea/VOC.ai production lake: 1.9B conversations, 8.7M handoffs)
+- Three advisors:
+  - Chen LIN (HKU primary, corporate finance / law-and-finance, values identification rigor + business framing)
+  - Li-An ZHOU (PKU, institutional economics / promotion tournament theory, values mechanism + identification)
+  - Jing CAI (UMD, J-PAL Firms co-chair, values field RCT + firm-level economic outcomes)
+- 6-month timeline, Nov 2026 defense
+
+Produce a JSON object with this exact schema (Hunter's proposal framework):
+
+{{
+  "one_line_question": "Single sentence framing the research question (Chinese is fine)",
+  "why_top_tier": [
+    "3-5 bullet points explaining why this is a top-tier journal contribution"
+  ],
+  "why_solvea_exclusive": [
+    "3-5 bullet points explaining why only Solvea's data can answer this (data uniqueness)"
+  ],
+  "experiment_design": {{
+    "approach": "RCT / Natural experiment / Observational DID / hybrid",
+    "treatment_arms": ["arm 1 description", "arm 2 description", ...],
+    "randomization_unit": "ticket / lead / tenant / agent / etc",
+    "randomization_logic": "how randomization is implemented",
+    "duration_weeks": 6
+  }},
+  "outcomes": {{
+    "primary": ["primary outcome with operational definition"],
+    "secondary": ["secondary outcomes"],
+    "mediators": ["mechanism variables"]
+  }},
+  "pre_registered_hypotheses": [
+    {{"id": "H1", "statement": "...", "direction": "positive/negative/inverted-U"}},
+    {{"id": "H2", "statement": "..."}}
+  ],
+  "sample_size": {{
+    "per_arm": 5000,
+    "total": 25000,
+    "power": 0.8,
+    "alpha": 0.05,
+    "mde": "minimum detectable effect description",
+    "weeks_to_collect": 6
+  }},
+  "implementation": {{
+    "engineering_days": "1-5",
+    "ops_steps": ["step 1", "step 2"],
+    "cost_usd": "< $200 in compute + LLM cost",
+    "dependencies": ["what we need from Solvea ops team"]
+  }},
+  "journal_targets": [
+    {{"tier": "primary", "journal": "MISQ", "reason": "why this journal"}},
+    {{"tier": "backup", "journal": "...", "reason": "..."}}
+  ],
+  "theory_anchors": [
+    {{"theory": "Theory name", "citation": "Author Year, Journal", "role": "primary / extension / contrast"}}
+  ],
+  "risks": [
+    {{"risk": "specific risk", "mitigation": "specific fix", "severity": "high/medium/low"}}
+  ],
+  "elevator_pitches": {{
+    "lin": "30-second pitch tailored for Prof Chen Lin (Chinese, focus on identification + business)",
+    "zhou": "30-second pitch tailored for Prof Li-An Zhou (Chinese, focus on mechanism + institutional)",
+    "cai": "30-second pitch tailored for Prof Jing Cai (English or Chinese, focus on RCT + firm outcomes)"
+  }}
+}}
+
+Be specific. Use real numbers (sample size, weeks, cost). Use real journal names. Tailor pitches to each advisor's expertise. JSON only, no prose outside.
+"""
+
+
+@router.post("/hypotheses/{code}/generate-proposal", response_model=HypothesisDetail)
+async def generate_proposal(code: str, token: str, force: bool = False):
+    user = _user_from_token(token)
+    with conn() as c:
+        ws_row = c.execute(
+            "SELECT id FROM workspaces WHERE owner_email=? LIMIT 1", (user["email"],)
+        ).fetchone()
+        if not ws_row:
+            raise HTTPException(404, "No workspace")
+        row = c.execute(
+            "SELECT * FROM hypotheses WHERE workspace_id=? AND code=?",
+            (ws_row["id"], code),
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "Hypothesis not found")
+
+    if row["proposal_json"] and not force:
+        # already cached — return existing
+        return get_hypothesis(code, token)
+
+    prompt = GENERATE_PROPOSAL_PROMPT.format(
+        code=row["code"], title=row["title"], paradox=row["paradox"],
+        hypothesis=row["hypothesis"], identification=row["identification"],
+        theory_anchor=row["theory_anchor"], journal_target=row["journal_target"],
+        feasibility_6mo=row["feasibility_6mo"], ab_test_difficulty=row["ab_test_difficulty"],
+        notes=row["notes"] or "(none)",
+    )
+
+    text = await _call_claude_chat(
+        system_prompt="You are a top-tier IS/Mgmt/Mark research methodologist. Output JSON only.",
+        history=[{"role": "user", "content": prompt}],
+        max_tokens=8000,
+    )
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("```", 2)[1]
+        if text.startswith("json"):
+            text = text[4:]
+    try:
+        parsed = json.loads(text)
+        ProposalSection(**parsed)  # validate
+    except Exception as e:
+        raise HTTPException(502, f"Claude returned non-conforming JSON: {e}: {text[:300]}")
+
+    with conn() as c:
+        c.execute(
+            "UPDATE hypotheses SET proposal_json=?, proposal_generated_at=datetime('now') WHERE id=?",
+            (json.dumps(parsed, ensure_ascii=False), row["id"]),
+        )
+    return get_hypothesis(code, token)
 
 
 # ─── Chat ──────────────────────────────────────────────────────────────
@@ -119,12 +332,12 @@ class ChatResponse(BaseModel):
     assistant_message: ChatMessage
 
 
-async def _call_claude_chat(system_prompt: str, history: list[dict]) -> str:
+async def _call_claude_chat(system_prompt: str, history: list[dict], max_tokens: int = 2000) -> str:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     base_url = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
     if not api_key:
         raise HTTPException(503, "ANTHROPIC_API_KEY not set")
-    async with httpx.AsyncClient(timeout=120) as client:
+    async with httpx.AsyncClient(timeout=300) as client:
         resp = await client.post(
             f"{base_url}/v1/messages",
             headers={
@@ -134,7 +347,7 @@ async def _call_claude_chat(system_prompt: str, history: list[dict]) -> str:
             },
             json={
                 "model": "claude-sonnet-4-5-20250929",
-                "max_tokens": 2000,
+                "max_tokens": max_tokens,
                 "system": system_prompt,
                 "messages": history,
             },

@@ -1,90 +1,85 @@
-// arxify.ai — landing page
+// arxify.io — landing (academic/scientific design)
+
+"use client";
 
 import Link from "next/link";
+import { Nav } from "@/components/Nav";
+import { useLocale } from "@/lib/locale";
 
 export default function LandingPage() {
+  const { t } = useLocale();
   return (
-    <main className="min-h-screen bg-[#fafaf7] text-[#1f1c17] font-serif">
-      <Header />
+    <main className="min-h-screen bg-white text-[#0a0a0a]">
+      <Nav />
 
-      <section className="max-w-4xl mx-auto px-8 py-24 text-center">
-        <div className="text-xs font-mono uppercase tracking-widest text-[#6e6a5d] mb-4">
-          VOL. 01 · BUILT ON OPEN-SOURCE AI-RESEARCHER
-        </div>
+      <section className="max-w-4xl mx-auto px-8 py-20 md:py-28 text-center">
+        <div className="eyebrow mb-4">{t.hero_eyebrow}</div>
 
-        <h1 className="text-6xl md:text-7xl font-extrabold leading-[0.96] tracking-tight mb-6">
-          From <span className="line-through decoration-2 decoration-[#1f1c17]">idea</span>
+        <h1 className="text-5xl md:text-7xl font-bold leading-[1.02] tracking-tight mb-6">
+          {t.hero_title_a}{" "}
+          <span className="line-through decoration-2 decoration-[#0a0a0a]">{t.hero_title_idea}</span>
           <br />
-          to <span className="italic text-[#b85a3a]">paper</span>.
+          {t.hero_title_b} <span className="text-[#1e40af]">{t.hero_title_paper}</span>.
         </h1>
 
-        <p className="text-xl md:text-2xl italic text-[#6e6a5d] max-w-2xl mx-auto mb-10 leading-relaxed">
-          Drop in your idea or data. Get a research plan, experiment design,
-          and full paper draft. Built on SakanaAI <em>AI-Scientist-v2</em> +
-          MiroMind <em>MiroThinker</em>.
+        <p className="text-lg md:text-xl text-[#64748b] max-w-2xl mx-auto mb-10 leading-relaxed">
+          {t.hero_desc}
         </p>
 
-        <div className="flex gap-4 justify-center mb-16">
+        <div className="flex gap-3 justify-center mb-12 flex-wrap">
           <Link
-            href="/signup"
-            className="bg-[#1f1c17] text-[#fafaf7] px-8 py-4 rounded-full font-medium hover:bg-[#b85a3a] transition"
+            href="/try"
+            className="bg-[#0a0a0a] text-white px-7 py-3.5 rounded-md font-medium hover:bg-[#1e40af] transition"
           >
-            Start free →
+            {t.hero_cta_start}
           </Link>
           <Link
             href="/pricing"
-            className="border border-[#1f1c17] px-8 py-4 rounded-full font-medium hover:bg-[#1f1c17] hover:text-[#fafaf7] transition"
+            className="border border-[#0a0a0a] px-7 py-3.5 rounded-md font-medium hover:bg-[#0a0a0a] hover:text-white transition"
           >
-            See pricing
+            {t.hero_cta_pricing}
           </Link>
         </div>
 
-        <div className="font-mono text-xs text-[#6e6a5d] flex justify-center gap-6 flex-wrap">
-          <span>⚡ 5 ideas in 15 min</span>
-          <span>🔬 Brutal peer-review</span>
-          <span>📄 LaTeX + PDF export</span>
-          <span>🔐 No training on your data</span>
+        <div className="font-mono text-xs text-[#64748b] flex justify-center gap-6 flex-wrap">
+          {t.hero_perks.map((p) => (
+            <span key={p}>{p}</span>
+          ))}
         </div>
       </section>
 
-      <section className="bg-[#f3eee2] border-y border-[#d3cdbe] py-20">
+      <section className="bg-[#f8fafc] border-y border-[#e5e7eb] py-20">
         <div className="max-w-5xl mx-auto px-8">
-          <h2 className="text-center text-3xl font-extrabold mb-2">How it works</h2>
-          <p className="text-center text-[#6e6a5d] italic mb-12">Four steps, one afternoon.</p>
+          <div className="eyebrow text-center mb-3">{t.how_eyebrow}</div>
+          <h2 className="text-center text-3xl md:text-4xl font-bold mb-2">{t.how_title}</h2>
+          <p className="text-center text-[#64748b] mb-12">{t.how_subtitle}</p>
 
           <div className="grid md:grid-cols-4 gap-6">
-            <Step n="01" title="Input" desc="Paste your idea, upload a PDF proposal, or drop a CSV of data." />
-            <Step n="02" title="Plan" desc="AI drafts 5 candidate directions + DeepCritique peer review + tournament ranking." />
-            <Step n="03" title="Data" desc="Upload experiment results. We map them to the chosen plan." />
-            <Step n="04" title="Paper" desc="LaTeX + PDF draft, ready to hand to your advisor or submit." />
+            {t.how_steps.map((s) => (
+              <Step key={s.n} {...s} />
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="max-w-3xl mx-auto px-8 py-24">
-        <div className="border-l-2 border-[#b85a3a] pl-6 italic text-xl text-[#1f1c17]/90 mb-4">
-          "Used it to pick my HKU DBA dissertation topic. 17 candidate
-          directions, brutal peer review, automated email to three advisors. Three days, one person."
-        </div>
-        <div className="font-mono text-xs text-[#6e6a5d] uppercase tracking-widest">
-          — Hunter, HKU DBA Candidate · first paying customer
-        </div>
+      <section className="max-w-3xl mx-auto px-8 py-20">
+        <blockquote className="border-l-2 border-[#1e40af] pl-6 text-xl text-[#0a0a0a]/90 mb-4 leading-relaxed">
+          {t.testimonial_quote}
+        </blockquote>
+        <div className="font-mono text-xs text-[#64748b] uppercase tracking-widest">{t.testimonial_author}</div>
       </section>
 
-      <section className="bg-[#1f1c17] text-[#fafaf7] py-20 px-8">
+      <section className="bg-[#0a0a0a] text-white py-20 px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-extrabold mb-4">Built on open source</h2>
-          <p className="text-[#fafaf7]/70 mb-8 max-w-2xl mx-auto">
-            The core pipeline is MIT-licensed and on GitHub. Run it locally for
-            free. We just make it easy.
-          </p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t.oss_title}</h2>
+          <p className="text-white/70 mb-8 max-w-2xl mx-auto">{t.oss_desc}</p>
           <a
             href="https://github.com/mguozhen/ai-researcher"
             target="_blank"
             rel="noreferrer"
-            className="inline-block border border-[#fafaf7] px-6 py-3 rounded-full font-mono text-sm hover:bg-[#fafaf7] hover:text-[#1f1c17] transition"
+            className="inline-block border border-white px-6 py-3 rounded-md font-mono text-sm hover:bg-white hover:text-[#0a0a0a] transition"
           >
-            github.com/mguozhen/ai-researcher →
+            {t.oss_cta}
           </a>
         </div>
       </section>
@@ -96,46 +91,23 @@ export default function LandingPage() {
 
 function Step({ n, title, desc }: { n: string; title: string; desc: string }) {
   return (
-    <div className="border-t-2 border-[#b85a3a] pt-4">
-      <div className="font-mono text-xs uppercase tracking-widest text-[#b85a3a] mb-2">{n}</div>
-      <h3 className="text-xl font-bold mb-2">{title}</h3>
-      <p className="text-sm text-[#6e6a5d] leading-relaxed">{desc}</p>
+    <div className="border-t-2 border-[#1e40af] pt-4">
+      <div className="font-mono text-xs uppercase tracking-widest text-[#1e40af] mb-2">{n}</div>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-sm text-[#64748b] leading-relaxed">{desc}</p>
     </div>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex items-center justify-between px-8 py-5 max-w-6xl mx-auto">
-      <Link href="/" className="text-xl font-bold tracking-tight">
-        arxify<span className="text-[#b85a3a]">.ai</span>
-      </Link>
-      <nav className="flex items-center gap-6 text-sm font-medium">
-        <Link href="/pricing" className="hover:text-[#b85a3a]">Pricing</Link>
-        <a href="https://github.com/mguozhen/ai-researcher" target="_blank" rel="noreferrer" className="hover:text-[#b85a3a]">
-          GitHub
-        </a>
-        <Link
-          href="/signup"
-          className="bg-[#1f1c17] text-[#fafaf7] px-4 py-2 rounded-full text-sm font-medium hover:bg-[#b85a3a] transition"
-        >
-          Start free
-        </Link>
-      </nav>
-    </header>
   );
 }
 
 function Footer() {
   return (
-    <footer className="border-t border-[#d3cdbe] py-10 px-8">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[#6e6a5d]">
-        <div>arxify.ai · From idea to paper</div>
+    <footer className="border-t border-[#e5e7eb] py-10 px-8">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[#64748b]">
+        <div>arxify.io · From idea to paper</div>
         <div className="flex gap-6">
           <Link href="/pricing">Pricing</Link>
-          <a href="https://github.com/mguozhen/ai-researcher" target="_blank" rel="noreferrer">GitHub</a>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
+          <a href="https://github.com/mguozhen/arxify" target="_blank" rel="noreferrer">GitHub</a>
+          <Link href="/login">Log in</Link>
         </div>
       </div>
     </footer>
