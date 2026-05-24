@@ -336,7 +336,13 @@ async def _call_claude_chat(system_prompt: str, history: list[dict], max_tokens:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     base_url = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
     if not api_key:
-        raise HTTPException(503, "ANTHROPIC_API_KEY not set")
+        # Fallback: flatkey provides an Anthropic-shape proxy at api.flatkey.ai/v1/messages
+        flatkey = os.environ.get("FLATKEY_API_KEY")
+        if flatkey:
+            api_key = flatkey
+            base_url = os.environ.get("ANTHROPIC_BASE_URL", "https://api.flatkey.ai")
+        else:
+            raise HTTPException(503, "No LLM key — set ANTHROPIC_API_KEY or FLATKEY_API_KEY")
     async with httpx.AsyncClient(timeout=300) as client:
         resp = await client.post(
             f"{base_url}/v1/messages",
