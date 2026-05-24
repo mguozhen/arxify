@@ -137,27 +137,27 @@ export default function HypothesisPage() {
   // If no proposal yet, show "generate" CTA
   if (!detail.proposal) {
     return (
-      <main className="min-h-screen bg-[#ffffff] text-[#0a0a0a] ">
+      <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117] ">
         <Header h={detail.hypothesis} />
         <section className="max-w-3xl mx-auto px-8 py-16 text-center">
-          <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-3">
+          <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-3">
             {detail.hypothesis.code} · {detail.hypothesis.journal_target} · {detail.hypothesis.status}
           </div>
           <h1 className="text-4xl font-extrabold leading-tight mb-3">{detail.hypothesis.title}</h1>
-          <p className="italic text-[#1e40af] text-lg mb-10">&ldquo;{detail.hypothesis.paradox}&rdquo;</p>
+          <p className="italic text-[#0a8060] text-lg mb-10">&ldquo;{detail.hypothesis.paradox}&rdquo;</p>
 
-          <div className="border border-[#e5e7eb] bg-white rounded-2xl p-8 max-w-xl mx-auto">
-            <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-2">
+          <div className="border border-[#e6e8ec] bg-white rounded-2xl p-8 max-w-xl mx-auto">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">
               ⚡ EXPAND TO PPT
             </div>
-            <p className="text-sm text-[#64748b] mb-6 italic">
+            <p className="text-sm text-[#4b5263] mb-6 italic">
               Hunter&apos;s 开题报告 framework. 13 sections: 一句话问题 / 为什么顶刊 / 为什么 Solvea 独家 /
               实验设计 / Outcome / Hypotheses / Sample power / 实施成本 / 期刊 / 文献锚 / 风险 / 三位老师的电梯演讲。
             </p>
             <button
               onClick={generate}
               disabled={generating}
-              className="bg-[#0a0a0a] text-[#ffffff] px-8 py-4 rounded-full font-medium hover:bg-[#1e40af] disabled:opacity-40 transition"
+              className="bg-[#0e1117] text-[#ffffff] px-8 py-4 rounded-full font-medium hover:bg-[#0a8060] disabled:opacity-40 transition"
             >
               {generating ? "Generating proposal (~30s)…" : "Generate full proposal →"}
             </button>
@@ -278,22 +278,22 @@ export default function HypothesisPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#ffffff] text-[#0a0a0a]  flex flex-col">
+    <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117]  flex flex-col">
       <Header h={h} onRegenerate={generate} />
 
       <div className="flex-1 flex flex-col px-8 py-6 max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-mono uppercase tracking-widest text-[#64748b]">
+          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263]">
             {slides[slideIdx].title}
           </div>
-          <div className="text-xs font-mono text-[#64748b]">
-            <span className="text-[#0a0a0a] font-bold">{slideIdx + 1}</span>
+          <div className="text-xs font-mono text-[#4b5263]">
+            <span className="text-[#0e1117] font-bold">{slideIdx + 1}</span>
             <span> / {slides.length}</span>
           </div>
         </div>
 
         {/* SLIDE BODY */}
-        <div className="flex-1 border border-[#e5e7eb] rounded-2xl bg-white p-10 md:p-14 min-h-[60vh]">
+        <div className="flex-1 border border-[#e6e8ec] rounded-2xl bg-white p-10 md:p-14 min-h-[60vh]">
           {slides[slideIdx].body}
         </div>
 
@@ -302,7 +302,7 @@ export default function HypothesisPage() {
           <button
             onClick={() => setSlideIdx((i) => Math.max(0, i - 1))}
             disabled={slideIdx === 0}
-            className="px-5 py-2 border border-[#0a0a0a] rounded-full font-medium disabled:opacity-30 hover:bg-[#0a0a0a] hover:text-[#ffffff] transition"
+            className="px-5 py-2 border border-[#0e1117] rounded-full font-medium disabled:opacity-30 hover:bg-[#0e1117] hover:text-[#ffffff] transition"
           >
             ← Prev
           </button>
@@ -312,7 +312,7 @@ export default function HypothesisPage() {
                 key={i}
                 onClick={() => setSlideIdx(i)}
                 className={`h-2 w-6 rounded-full transition ${
-                  i === slideIdx ? "bg-[#1e40af]" : "bg-[#e5e7eb]"
+                  i === slideIdx ? "bg-[#0a8060]" : "bg-[#e6e8ec]"
                 }`}
               />
             ))}
@@ -320,13 +320,13 @@ export default function HypothesisPage() {
           <button
             onClick={() => setSlideIdx((i) => Math.min(slides.length - 1, i + 1))}
             disabled={slideIdx === slides.length - 1}
-            className="px-5 py-2 bg-[#0a0a0a] text-[#ffffff] rounded-full font-medium disabled:opacity-30 hover:bg-[#1e40af] transition"
+            className="px-5 py-2 bg-[#0e1117] text-[#ffffff] rounded-full font-medium disabled:opacity-30 hover:bg-[#0a8060] transition"
           >
             Next →
           </button>
         </div>
 
-        <div className="text-center text-xs font-mono text-[#64748b] mt-3 italic">
+        <div className="text-center text-xs font-mono text-[#4b5263] mt-3 italic">
           ← → space to navigate · Esc to exit · 0-9 to jump
         </div>
       </div>
@@ -339,20 +339,20 @@ export default function HypothesisPage() {
 function CoverSlide({ h }: { h: Hypothesis }) {
   return (
     <div className="flex flex-col h-full justify-center">
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-4">
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-4">
         {h.code} · {h.journal_target} · {h.status}
       </div>
       <h1 className="text-5xl md:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
         {h.title}
       </h1>
-      <p className="italic text-2xl text-[#1e40af] mb-8 leading-relaxed border-l-4 border-[#1e40af] pl-4">
+      <p className="italic text-2xl text-[#0a8060] mb-8 leading-relaxed border-l-4 border-[#0a8060] pl-4">
         &ldquo;{h.paradox}&rdquo;
       </p>
-      <div className="flex gap-6 text-sm font-mono text-[#64748b]">
+      <div className="flex gap-6 text-sm font-mono text-[#4b5263]">
         <span>Feasibility {"★".repeat(h.feasibility_6mo)}{"☆".repeat(5 - h.feasibility_6mo)}</span>
         <span>A/B {"★".repeat(6 - h.ab_test_difficulty)}{"☆".repeat(h.ab_test_difficulty - 1)}</span>
       </div>
-      <div className="mt-12 text-sm text-[#64748b] font-mono">
+      <div className="mt-12 text-sm text-[#4b5263] font-mono">
         郭振 · HKU DBA · arxify.io
       </div>
     </div>
@@ -362,11 +362,11 @@ function CoverSlide({ h }: { h: Hypothesis }) {
 function BigQuote({ eyebrow, quote, footer }: { eyebrow: string; quote: string; footer?: string }) {
   return (
     <div className="flex flex-col h-full justify-center">
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-6">{eyebrow}</div>
-      <blockquote className="text-3xl md:text-4xl font-extrabold leading-tight border-l-4 border-[#1e40af] pl-6 mb-6">
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-6">{eyebrow}</div>
+      <blockquote className="text-3xl md:text-4xl font-extrabold leading-tight border-l-4 border-[#0a8060] pl-6 mb-6">
         {quote}
       </blockquote>
-      {footer && <div className="text-sm text-[#64748b] italic mt-4">{footer}</div>}
+      {footer && <div className="text-sm text-[#4b5263] italic mt-4">{footer}</div>}
     </div>
   );
 }
@@ -374,12 +374,12 @@ function BigQuote({ eyebrow, quote, footer }: { eyebrow: string; quote: string; 
 function NumberedList({ eyebrow, heading, items }: { eyebrow: string; heading: string; items: string[] }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">{eyebrow}</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{eyebrow}</div>
       <h2 className="text-3xl font-extrabold mb-8">{heading}</h2>
       <ol className="space-y-4">
         {items.map((s, i) => (
           <li key={i} className="flex gap-4 items-start">
-            <span className="font-mono text-[#1e40af] font-bold text-lg w-8 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+            <span className="font-mono text-[#0a8060] font-bold text-lg w-8 shrink-0">{String(i + 1).padStart(2, "0")}</span>
             <span className="text-lg leading-relaxed">{s}</span>
           </li>
         ))}
@@ -391,7 +391,7 @@ function NumberedList({ eyebrow, heading, items }: { eyebrow: string; heading: s
 function ExperimentSlide({ design, identification }: { design: any; identification: string }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">EXPERIMENT DESIGN</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">EXPERIMENT DESIGN</div>
       <h2 className="text-3xl font-extrabold mb-6">{design.approach}</h2>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -401,19 +401,19 @@ function ExperimentSlide({ design, identification }: { design: any; identificati
       </div>
 
       <div className="mb-6">
-        <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-3">Treatment arms</div>
+        <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-3">Treatment arms</div>
         <ol className="space-y-2">
           {design.treatment_arms.map((arm: string, i: number) => (
             <li key={i} className="flex gap-3 items-start">
-              <span className="font-mono text-[#1e40af] font-bold w-6 shrink-0">T{i}</span>
+              <span className="font-mono text-[#0a8060] font-bold w-6 shrink-0">T{i}</span>
               <span>{arm}</span>
             </li>
           ))}
         </ol>
       </div>
 
-      <div className="bg-[#eff6ff] border-l-2 border-[#1e40af] p-4 text-sm italic">
-        <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-1 not-italic">Identification</div>
+      <div className="bg-[#e7f4ee] border-l-2 border-[#0a8060] p-4 text-sm italic">
+        <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-1 not-italic">Identification</div>
         {identification}
       </div>
     </div>
@@ -423,7 +423,7 @@ function ExperimentSlide({ design, identification }: { design: any; identificati
 function OutcomesSlide({ outcomes }: { outcomes: any }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">OUTCOMES</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">OUTCOMES</div>
       <h2 className="text-3xl font-extrabold mb-6">What we measure</h2>
 
       <div className="grid md:grid-cols-3 gap-5">
@@ -437,8 +437,8 @@ function OutcomesSlide({ outcomes }: { outcomes: any }) {
 
 function OutcomeCol({ label, items, highlight }: { label: string; items: string[]; highlight?: boolean }) {
   return (
-    <div className={`rounded-xl p-4 ${highlight ? "border-2 border-[#1e40af] bg-[#eff6ff]" : "border border-[#e5e7eb]"}`}>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-3">{label}</div>
+    <div className={`rounded-xl p-4 ${highlight ? "border-2 border-[#0a8060] bg-[#e7f4ee]" : "border border-[#e6e8ec]"}`}>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-3">{label}</div>
       <ul className="space-y-2 text-sm">
         {items.map((it, i) => <li key={i} className="leading-snug">· {it}</li>)}
       </ul>
@@ -449,12 +449,12 @@ function OutcomeCol({ label, items, highlight }: { label: string; items: string[
 function HypothesesSlide({ items }: { items: any[] }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">PRE-REGISTERED</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">PRE-REGISTERED</div>
       <h2 className="text-3xl font-extrabold mb-6">Hypotheses</h2>
       <ol className="space-y-4">
         {items.map((h, i) => (
-          <li key={i} className="border-l-2 border-[#1e40af] pl-4 py-1">
-            <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-1">
+          <li key={i} className="border-l-2 border-[#0a8060] pl-4 py-1">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-1">
               {h.id}{h.direction ? ` · ${h.direction}` : ""}
             </div>
             <div className="text-base leading-relaxed">{h.statement}</div>
@@ -468,7 +468,7 @@ function HypothesesSlide({ items }: { items: any[] }) {
 function SampleSizeSlide({ s }: { s: any }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">SAMPLE & POWER</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">SAMPLE & POWER</div>
       <h2 className="text-3xl font-extrabold mb-8">How big? How long?</h2>
       <div className="grid md:grid-cols-2 gap-4 mb-6">
         <BigStat label="Per arm" value={s.per_arm?.toLocaleString?.() || s.per_arm} />
@@ -487,7 +487,7 @@ function SampleSizeSlide({ s }: { s: any }) {
 function ImplementationSlide({ impl }: { impl: any }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">IMPLEMENTATION</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">IMPLEMENTATION</div>
       <h2 className="text-3xl font-extrabold mb-6">Cost & timeline</h2>
       <div className="grid md:grid-cols-3 gap-4 mb-6">
         <BigStat label="Engineering" value={`${impl.engineering_days} d`} />
@@ -496,11 +496,11 @@ function ImplementationSlide({ impl }: { impl: any }) {
       </div>
       <div className="grid md:grid-cols-2 gap-6 text-sm">
         <div>
-          <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-2">Ops Steps</div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">Ops Steps</div>
           <ul className="space-y-1">{impl.ops_steps.map((s: string, i: number) => <li key={i}>· {s}</li>)}</ul>
         </div>
         <div>
-          <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-2">Dependencies</div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">Dependencies</div>
           <ul className="space-y-1">{impl.dependencies.map((d: string, i: number) => <li key={i}>· {d}</li>)}</ul>
         </div>
       </div>
@@ -511,16 +511,16 @@ function ImplementationSlide({ impl }: { impl: any }) {
 function JournalsSlide({ targets }: { targets: any[] }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">JOURNAL TARGETS</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">JOURNAL TARGETS</div>
       <h2 className="text-3xl font-extrabold mb-6">Where this lands</h2>
       <div className="grid md:grid-cols-2 gap-4">
         {targets.map((t, i) => (
-          <div key={i} className={`rounded-xl p-5 ${t.tier === "primary" ? "border-2 border-[#1e40af] bg-[#eff6ff]" : "border border-[#e5e7eb]"}`}>
+          <div key={i} className={`rounded-xl p-5 ${t.tier === "primary" ? "border-2 border-[#0a8060] bg-[#e7f4ee]" : "border border-[#e6e8ec]"}`}>
             <div className="flex items-center justify-between mb-2">
               <div className="font-bold text-xl">{t.journal}</div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#64748b]">{t.tier}</span>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-[#4b5263]">{t.tier}</span>
             </div>
-            <div className="text-sm text-[#64748b] italic">{t.reason}</div>
+            <div className="text-sm text-[#4b5263] italic">{t.reason}</div>
           </div>
         ))}
       </div>
@@ -531,14 +531,14 @@ function JournalsSlide({ targets }: { targets: any[] }) {
 function TheorySlide({ anchors }: { anchors: any[] }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">THEORY ANCHORS</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">THEORY ANCHORS</div>
       <h2 className="text-3xl font-extrabold mb-6">文献框架</h2>
       <div className="space-y-4">
         {anchors.map((a, i) => (
-          <div key={i} className="border-l-2 border-[#1e40af] pl-4 py-1">
-            <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-1">{a.role}</div>
+          <div key={i} className="border-l-2 border-[#0a8060] pl-4 py-1">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-1">{a.role}</div>
             <div className="font-bold mb-1">{a.theory}</div>
-            <div className="text-sm text-[#64748b] italic">{a.citation}</div>
+            <div className="text-sm text-[#4b5263] italic">{a.citation}</div>
           </div>
         ))}
       </div>
@@ -553,16 +553,16 @@ function RisksSlide({ risks }: { risks: any[] }) {
     "bg-amber-100 text-amber-900 border-amber-300";
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">RISKS</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">RISKS</div>
       <h2 className="text-3xl font-extrabold mb-6">What could kill this</h2>
       <div className="space-y-3">
         {risks.map((r, i) => (
-          <div key={i} className="border border-[#e5e7eb] rounded-xl p-4">
+          <div key={i} className="border border-[#e6e8ec] rounded-xl p-4">
             <div className="flex items-start justify-between mb-2">
               <div className="font-bold text-base flex-1">{r.risk}</div>
               <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded-full border ${sev(r.severity)}`}>{r.severity}</span>
             </div>
-            <div className="text-sm text-[#64748b]"><strong className="text-[#0a0a0a]">Mitigation: </strong>{r.mitigation}</div>
+            <div className="text-sm text-[#4b5263]"><strong className="text-[#0e1117]">Mitigation: </strong>{r.mitigation}</div>
           </div>
         ))}
       </div>
@@ -573,7 +573,7 @@ function RisksSlide({ risks }: { risks: any[] }) {
 function PitchesSlide({ pitches }: { pitches: any }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-2">ELEVATOR PITCHES</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">ELEVATOR PITCHES</div>
       <h2 className="text-3xl font-extrabold mb-6">三位导师的 30 秒 pitch</h2>
       <div className="space-y-4">
         <PitchCard advisor="林晨 · HKU (主导师)" content={pitches.lin} flavor="商科 / 识别" />
@@ -586,12 +586,12 @@ function PitchesSlide({ pitches }: { pitches: any }) {
 
 function PitchCard({ advisor, content, flavor }: { advisor: string; content: string; flavor: string }) {
   return (
-    <div className="border border-[#e5e7eb] rounded-xl p-4">
+    <div className="border border-[#e6e8ec] rounded-xl p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="font-bold">{advisor}</div>
-        <span className="text-[10px] font-mono uppercase tracking-widest text-[#64748b]">{flavor}</span>
+        <span className="text-[10px] font-mono uppercase tracking-widest text-[#4b5263]">{flavor}</span>
       </div>
-      <p className="text-sm italic text-[#0a0a0a] leading-relaxed">&ldquo;{content}&rdquo;</p>
+      <p className="text-sm italic text-[#0e1117] leading-relaxed">&ldquo;{content}&rdquo;</p>
     </div>
   );
 }
@@ -601,7 +601,7 @@ function PitchCard({ advisor, content, flavor }: { advisor: string; content: str
 function KV({ k, v, span }: { k: string; v: string; span?: string }) {
   return (
     <div className={span}>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-1">{k}</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-1">{k}</div>
       <div className="text-base">{v}</div>
     </div>
   );
@@ -609,33 +609,33 @@ function KV({ k, v, span }: { k: string; v: string; span?: string }) {
 
 function BigStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="border border-[#e5e7eb] rounded-xl p-4">
-      <div className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-1">{label}</div>
-      <div className="font-extrabold text-3xl text-[#1e40af]">{value}</div>
+    <div className="border border-[#e6e8ec] rounded-xl p-4">
+      <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-1">{label}</div>
+      <div className="font-extrabold text-3xl text-[#0a8060]">{value}</div>
     </div>
   );
 }
 
 function Header({ h, onRegenerate }: { h: Hypothesis; onRegenerate?: () => void }) {
   return (
-    <header className="border-b border-[#e5e7eb]">
+    <header className="border-b border-[#e6e8ec]">
       <div className="flex items-center justify-between px-6 py-3 max-w-5xl mx-auto">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard?tab=hypotheses" className="text-xs font-mono uppercase tracking-widest text-[#64748b] hover:text-[#0a0a0a]">
+          <Link href="/dashboard?tab=hypotheses" className="text-xs font-mono uppercase tracking-widest text-[#4b5263] hover:text-[#0e1117]">
             ← back
           </Link>
-          <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af]">
+          <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060]">
             {h.code} · {h.journal_target}
           </div>
         </div>
         <div className="flex items-center gap-3">
           {onRegenerate && (
-            <button onClick={onRegenerate} className="text-xs font-mono text-[#64748b] hover:text-[#0a0a0a]">
+            <button onClick={onRegenerate} className="text-xs font-mono text-[#4b5263] hover:text-[#0e1117]">
               ↻ regenerate
             </button>
           )}
           <Link href="/" className="text-xl font-bold tracking-tight">
-            arxify<span className="text-[#1e40af]">.io</span>
+            arxify<span className="text-[#0a8060]">.io</span>
           </Link>
         </div>
       </div>
@@ -645,8 +645,8 @@ function Header({ h, onRegenerate }: { h: Hypothesis; onRegenerate?: () => void 
 
 function Loading({ text, error }: { text: string; error?: boolean }) {
   return (
-    <main className="min-h-screen bg-[#ffffff] flex items-center justify-center ">
-      <p className={`italic ${error ? "text-red-700" : "text-[#64748b]"}`}>{text}</p>
+    <main className="min-h-screen bg-[#f7f8fa] flex items-center justify-center ">
+      <p className={`italic ${error ? "text-red-700" : "text-[#4b5263]"}`}>{text}</p>
     </main>
   );
 }

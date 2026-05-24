@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceFull | null>(null);
-  const [tab, setTab] = useState<"chat" | "hypotheses" | "data" | "queue">("chat");
+  const [tab, setTab] = useState<"chat" | "hypotheses" | "data" | "queue">("hypotheses");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,7 +106,7 @@ export default function DashboardPage() {
         if (s.ok) setStatus(await s.json());
         if (w.ok) {
           setWorkspace(await w.json());
-          if (!urlTab) setTab("chat");
+          if (!urlTab) setTab("hypotheses");
         } else {
           if (!urlTab) setTab("queue");
         }
@@ -118,8 +118,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#ffffff] flex items-center justify-center ">
-        <p className="italic text-[#64748b]">Loading…</p>
+      <main className="min-h-screen bg-[#f7f8fa] flex items-center justify-center ">
+        <p className="italic text-[#4b5263]">Loading…</p>
       </main>
     );
   }
@@ -129,7 +129,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#ffffff] text-[#0a0a0a] ">
+    <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117] ">
       <Header email={status.email} />
 
       <div className="max-w-6xl mx-auto px-6 py-6">
@@ -139,10 +139,16 @@ export default function DashboardPage() {
               {workspace.workspace.title}
             </h1>
             {workspace.workspace.description && (
-              <p className="text-[#64748b] italic mb-6">{workspace.workspace.description}</p>
+              <p className="text-[#4b5263] italic mb-6">{workspace.workspace.description}</p>
             )}
 
-            <Tabs tab={tab} setTab={setTab} hasWs={true} />
+            <Tabs
+              tab={tab}
+              setTab={setTab}
+              hasWs={true}
+              hypCount={workspace.hypotheses.length}
+              dsCount={workspace.data_sources.length}
+            />
 
             {tab === "chat" && <ChatTab token={token} initial={workspace.chat} />}
             {tab === "hypotheses" && <HypothesesTab items={workspace.hypotheses} />}
@@ -152,7 +158,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <h1 className="text-3xl md:text-4xl font-extrabold mb-2">
-              You&apos;re #<span className="italic text-[#1e40af]">{status.position}</span> in line.
+              You&apos;re #<span className="italic text-[#0a8060]">{status.position}</span> in line.
             </h1>
             <QueueTab status={status} />
           </>
@@ -165,31 +171,33 @@ export default function DashboardPage() {
 // ───────────────────────────────────────────────────────────────────────
 
 function Tabs({
-  tab, setTab, hasWs,
+  tab, setTab, hasWs, hypCount, dsCount,
 }: {
   tab: string;
   setTab: (t: any) => void;
   hasWs: boolean;
+  hypCount: number;
+  dsCount: number;
 }) {
   const tabs = hasWs
     ? [
-        { id: "chat", label: "💬 Chat" },
-        { id: "hypotheses", label: "📋 17 Hypotheses" },
-        { id: "data", label: "🗄️ Data sources" },
+        { id: "hypotheses", label: `📋 Hypotheses · ${hypCount}` },
+        { id: "data", label: `🗄️ Data sources · ${dsCount}` },
+        { id: "chat", label: "💬 AI Advisor" },
         { id: "queue", label: "📬 Waitlist" },
       ]
     : [{ id: "queue", label: "📬 Waitlist" }];
   return (
-    <div className="border-b border-[#e5e7eb] mb-6">
-      <div className="flex gap-1 overflow-x-auto">
+    <div className="mb-6">
+      <div className="flex gap-2 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition whitespace-nowrap ${
               tab === t.id
-                ? "border-[#1e40af] text-[#0a0a0a]"
-                : "border-transparent text-[#64748b] hover:text-[#0a0a0a]"
+                ? "bg-white text-[#0a8060] border border-[#c2e5d8] shadow-mercury"
+                : "bg-transparent text-[#4b5263] border border-transparent hover:bg-white hover:border-[#e6e8ec]"
             }`}
           >
             {t.label}
@@ -238,7 +246,7 @@ function ChatTab({ token, initial }: { token: string; initial: ChatMessage[] }) 
     <div className="flex flex-col h-[calc(100vh-220px)] min-h-[500px]">
       <div className="flex-1 overflow-y-auto space-y-4 pb-4">
         {messages.length === 0 && (
-          <div className="text-center text-[#64748b] italic mt-12">
+          <div className="text-center text-[#4b5263] italic mt-12">
             Ask anything about your 17 directions, data sources, or advisor strategy.
           </div>
         )}
@@ -255,7 +263,7 @@ function ChatTab({ token, initial }: { token: string; initial: ChatMessage[] }) 
         <div className="text-sm text-red-700 mb-2 px-3 py-2 bg-red-50 rounded">{error}</div>
       )}
 
-      <div className="flex gap-2 border-t border-[#e5e7eb] pt-3">
+      <div className="flex gap-2 border-t border-[#e6e8ec] pt-3">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -267,12 +275,12 @@ function ChatTab({ token, initial }: { token: string; initial: ChatMessage[] }) 
           }}
           rows={2}
           placeholder="e.g. D8 vs D14 哪个更稳? ⌘+Enter to send"
-          className="flex-1 px-4 py-3 border border-[#e5e7eb] rounded-lg focus:border-[#1e40af] focus:outline-none text-sm resize-none"
+          className="flex-1 px-4 py-3 border border-[#e6e8ec] rounded-lg focus:border-[#0a8060] focus:outline-none text-sm resize-none"
         />
         <button
           onClick={send}
           disabled={sending || !input.trim()}
-          className="bg-[#0a0a0a] text-[#ffffff] px-6 rounded-lg font-medium hover:bg-[#1e40af] disabled:opacity-40 transition"
+          className="bg-[#0e1117] text-[#ffffff] px-6 rounded-lg font-medium hover:bg-[#0a8060] disabled:opacity-40 transition"
         >
           {sending ? "..." : "Send"}
         </button>
@@ -288,12 +296,12 @@ function Bubble({ msg }: { msg: ChatMessage }) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
           isUser
-            ? "bg-[#0a0a0a] text-[#ffffff]"
-            : "bg-white border border-[#e5e7eb]"
+            ? "bg-[#0e1117] text-[#ffffff]"
+            : "bg-white border border-[#e6e8ec]"
         }`}
       >
         {!isUser && (
-          <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af] mb-1">
+          <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-1">
             ai advisor · claude
           </div>
         )}
@@ -306,10 +314,10 @@ function Bubble({ msg }: { msg: ChatMessage }) {
 // ───────────────────────────────────────────────────────────────────────
 
 const STATUS_COLOR: Record<string, string> = {
-  main: "bg-[#1e40af] text-white",
-  shortlisted: "bg-[#f1f5f9] text-[#0a0a0a]",
-  candidate: "bg-white text-[#64748b] border border-[#e5e7eb]",
-  future: "bg-transparent text-[#64748b] border border-dashed border-[#e5e7eb]",
+  main: "bg-[#0a8060] text-white",
+  shortlisted: "bg-[#ecf4f0] text-[#0a8060]",
+  candidate: "bg-[#f3f4f7] text-[#4b5263]",
+  future: "bg-transparent text-[#8b94a3] border border-dashed border-[#e6e8ec]",
 };
 
 function HypothesesTab({ items }: { items: Hypothesis[] }) {
@@ -326,7 +334,7 @@ function HypothesesTab({ items }: { items: Hypothesis[] }) {
         if (!list.length) return null;
         return (
           <section key={s}>
-            <h2 className="text-xs font-mono uppercase tracking-widest text-[#64748b] mb-3">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-3">
               {s} ({list.length})
             </h2>
             <div className="grid md:grid-cols-2 gap-4">
@@ -344,38 +352,39 @@ function HypothesesTab({ items }: { items: Hypothesis[] }) {
 function HypCard({ h }: { h: Hypothesis }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-[#e5e7eb] rounded-2xl bg-white p-5 hover:border-[#1e40af] transition group">
-      <div className="flex items-start justify-between mb-2">
-        <div className="text-xs font-mono uppercase tracking-widest text-[#1e40af]">
-          {h.code} · {h.journal_target}
+    <div className="border border-[#e6e8ec] rounded-xl bg-white p-6 hover:border-[#c2e5d8] shadow-mercury transition group">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-[#ecf4f0] text-[#0a8060] tracking-wide">{h.code}</span>
+          <span className="text-[11px] font-medium text-[#8b94a3] uppercase tracking-wider">{h.journal_target}</span>
         </div>
-        <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded-full ${STATUS_COLOR[h.status] || ""}`}>
+        <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${STATUS_COLOR[h.status] || ""}`}>
           {h.status}
         </span>
       </div>
-      <h3 className="font-bold leading-snug mb-2">{h.title}</h3>
-      <p className="italic text-[#1e40af] text-sm mb-3">&ldquo;{h.paradox}&rdquo;</p>
-      <div className="flex gap-3 text-xs font-mono text-[#64748b] mb-3">
-        <span>Feasibility {"★".repeat(h.feasibility_6mo)}{"☆".repeat(5 - h.feasibility_6mo)}</span>
-        <span>A/B {"★".repeat(6 - h.ab_test_difficulty)}{"☆".repeat(h.ab_test_difficulty - 1)}</span>
+      <h3 className="font-semibold text-[17px] leading-snug mb-2 text-[#0e1117] tracking-tight">{h.title}</h3>
+      <p className="text-[#2a3441] text-[14px] mb-4 leading-relaxed">{h.paradox}</p>
+      <div className="flex gap-4 text-[11px] font-mono text-[#4b5263] mb-3 tabular">
+        <span>FEAS <span className="text-[#0a8060]">{"★".repeat(h.feasibility_6mo)}</span>{"☆".repeat(5 - h.feasibility_6mo)}</span>
+        <span>A/B <span className="text-[#0a8060]">{"★".repeat(6 - h.ab_test_difficulty)}</span>{"☆".repeat(h.ab_test_difficulty - 1)}</span>
       </div>
-      <div className="flex items-center justify-between border-t border-[#f1f5f9] pt-3">
+      <div className="flex items-center justify-between border-t border-[#e6e8ec] pt-3">
         <button
           onClick={() => setOpen(!open)}
-          className="text-xs font-mono text-[#64748b] hover:text-[#0a0a0a] uppercase tracking-widest"
+          className="text-xs font-mono text-[#4b5263] hover:text-[#0e1117] uppercase tracking-widest"
         >
           {open ? "− less" : "+ more"}
         </button>
         <Link
           href={`/dashboard/hypothesis/${h.code}`}
-          className="text-xs font-mono text-[#1e40af] hover:text-[#0a0a0a] uppercase tracking-widest font-bold"
+          className="text-xs font-mono text-[#0a8060] hover:text-[#0e1117] uppercase tracking-widest font-bold"
         >
           {/* @ts-ignore — has_proposal injected by api */}
           {(h as any).has_proposal ? "view ppt →" : "expand to ppt →"}
         </Link>
       </div>
       {open && (
-        <dl className="space-y-3 mt-3 text-sm border-t border-[#f1f5f9] pt-3">
+        <dl className="space-y-3 mt-3 text-sm border-t border-[#f3f4f7] pt-3">
           <Row label="Hypothesis">{h.hypothesis}</Row>
           <Row label="Identification">{h.identification}</Row>
           <Row label="Theory anchor">{h.theory_anchor}</Row>
@@ -389,7 +398,7 @@ function HypCard({ h }: { h: Hypothesis }) {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-mono uppercase tracking-widest text-[#64748b]">{label}</dt>
+      <dt className="text-xs font-mono uppercase tracking-widest text-[#4b5263]">{label}</dt>
       <dd>{children}</dd>
     </div>
   );
@@ -401,17 +410,17 @@ function DataTab({ items }: { items: DataSource[] }) {
   return (
     <div className="grid md:grid-cols-2 gap-4">
       {items.map((d) => (
-        <div key={d.id} className="border border-[#e5e7eb] rounded-2xl bg-white p-5">
+        <div key={d.id} className="border border-[#e6e8ec] rounded-2xl bg-white p-5">
           <div className="flex items-start justify-between mb-2">
             <h3 className="font-bold">{d.name}</h3>
-            <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded-full bg-[#eff6ff]">{d.kind}</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded-full bg-[#e7f4ee]">{d.kind}</span>
           </div>
-          {d.description && <p className="text-sm text-[#0a0a0a] mb-2">{d.description}</p>}
+          {d.description && <p className="text-sm text-[#0e1117] mb-2">{d.description}</p>}
           {d.stats && (
-            <p className="text-xs font-mono text-[#64748b] mb-2 leading-relaxed">{d.stats}</p>
+            <p className="text-xs font-mono text-[#4b5263] mb-2 leading-relaxed">{d.stats}</p>
           )}
           {d.notes && (
-            <p className="text-xs italic text-[#1e40af]">{d.notes}</p>
+            <p className="text-xs italic text-[#0a8060]">{d.notes}</p>
           )}
         </div>
       ))}
@@ -428,41 +437,41 @@ function QueueTab({ status }: { status: Status }) {
 
   return (
     <div className="max-w-2xl">
-      <div className="bg-[#eff6ff] rounded-2xl p-6 mb-6 border border-[#f1f5f9]">
+      <div className="bg-[#e7f4ee] rounded-2xl p-6 mb-6 border border-[#f3f4f7]">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-mono uppercase tracking-widest text-[#64748b]">Launch progress</div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263]">Launch progress</div>
           <div className="text-sm font-mono">
-            <strong className="text-[#0a0a0a] text-base">{status.total}</strong>
-            <span className="text-[#64748b]"> / {LAUNCH_TARGET}</span>
+            <strong className="text-[#0e1117] text-base">{status.total}</strong>
+            <span className="text-[#4b5263]"> / {LAUNCH_TARGET}</span>
           </div>
         </div>
-        <div className="w-full h-3 bg-white border border-[#e5e7eb] rounded-full overflow-hidden">
-          <div className="h-full bg-[#1e40af] transition-all" style={{ width: `${pct}%` }} />
+        <div className="w-full h-3 bg-white border border-[#e6e8ec] rounded-full overflow-hidden">
+          <div className="h-full bg-[#0a8060] transition-all" style={{ width: `${pct}%` }} />
         </div>
-        <p className="text-sm text-[#64748b] mt-3 italic">
+        <p className="text-sm text-[#4b5263] mt-3 italic">
           {remaining > 0 ? `${remaining} more to launch.` : "🎉 We hit target. Beta opening this week."}
         </p>
       </div>
 
-      <div className="border border-[#e5e7eb] rounded-2xl bg-white p-5 mb-4">
+      <div className="border border-[#e6e8ec] rounded-2xl bg-white p-5 mb-4">
         <h3 className="font-bold mb-2">Your signup info</h3>
         <dl className="space-y-2 text-sm">
-          <div className="flex gap-2"><dt className="text-[#64748b] w-24">Position</dt><dd>#{status.position}</dd></div>
-          <div className="flex gap-2"><dt className="text-[#64748b] w-24">Email</dt><dd>{status.email}</dd></div>
-          <div className="flex gap-2"><dt className="text-[#64748b] w-24">Joined</dt><dd>{status.created_at}</dd></div>
-          {status.source && <div className="flex gap-2"><dt className="text-[#64748b] w-24">Source</dt><dd>{status.source}</dd></div>}
+          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Position</dt><dd>#{status.position}</dd></div>
+          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Email</dt><dd>{status.email}</dd></div>
+          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Joined</dt><dd>{status.created_at}</dd></div>
+          {status.source && <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Source</dt><dd>{status.source}</dd></div>}
         </dl>
       </div>
 
-      <div className="border border-[#e5e7eb] rounded-2xl bg-white p-5">
+      <div className="border border-[#e6e8ec] rounded-2xl bg-white p-5">
         <h3 className="font-bold mb-2">Refer friends</h3>
-        <p className="text-sm text-[#64748b] mb-3 italic">Referred: {status.referred_count}</p>
+        <p className="text-sm text-[#4b5263] mb-3 italic">Referred: {status.referred_count}</p>
         <div className="flex gap-2">
           <input readOnly value={shareLink} onClick={(e) => (e.target as HTMLInputElement).select()}
-            className="flex-1 px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm font-mono bg-[#ffffff]" />
+            className="flex-1 px-3 py-2 border border-[#e6e8ec] rounded-lg text-sm font-mono bg-[#f7f8fa]" />
           <button
             onClick={() => { navigator.clipboard.writeText(shareLink); alert("Copied!"); }}
-            className="bg-[#0a0a0a] text-[#ffffff] px-3 py-2 rounded-lg text-sm hover:bg-[#1e40af] transition"
+            className="bg-[#0e1117] text-[#ffffff] px-3 py-2 rounded-lg text-sm hover:bg-[#0a8060] transition"
           >Copy</button>
         </div>
       </div>
@@ -474,15 +483,15 @@ function QueueTab({ status }: { status: Status }) {
 
 function Header({ email }: { email: string }) {
   return (
-    <header className="border-b border-[#e5e7eb]">
+    <header className="border-b border-[#e6e8ec]">
       <div className="flex items-center justify-between px-6 py-3 max-w-6xl mx-auto">
         <Link href="/" className="text-xl font-bold tracking-tight">
-          arxify<span className="text-[#1e40af]">.io</span>
+          arxify<span className="text-[#0a8060]">.io</span>
         </Link>
         <div className="flex items-center gap-4 text-sm">
-          <Link href="/try" className="text-[#64748b] hover:text-[#0a0a0a]">Try free</Link>
-          <Link href="/pricing" className="text-[#64748b] hover:text-[#0a0a0a]">Pricing</Link>
-          <span className="text-xs font-mono text-[#64748b]">{email}</span>
+          <Link href="/try" className="text-[#4b5263] hover:text-[#0e1117]">Try free</Link>
+          <Link href="/pricing" className="text-[#4b5263] hover:text-[#0e1117]">Pricing</Link>
+          <span className="text-xs font-mono text-[#4b5263]">{email}</span>
         </div>
       </div>
     </header>
@@ -491,20 +500,28 @@ function Header({ email }: { email: string }) {
 
 function NoToken() {
   return (
-    <main className="min-h-screen bg-[#ffffff] text-[#0a0a0a] ">
+    <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117] ">
       <section className="max-w-xl mx-auto px-8 py-20 text-center">
         <h1 className="text-4xl font-extrabold mb-4">
-          You&apos;re not <span className="italic text-[#1e40af]">in</span> yet.
+          You&apos;re not <span className="italic text-[#0a8060]">in</span> yet.
         </h1>
-        <p className="text-[#64748b] mb-8 italic">
+        <p className="text-[#4b5263] mb-8 italic">
           Either you haven&apos;t joined yet, or you&apos;re on a different device.
         </p>
-        <Link
-          href="/signup"
-          className="inline-block bg-[#0a0a0a] text-[#ffffff] px-8 py-4 rounded-full font-medium hover:bg-[#1e40af] transition"
-        >
-          Join waitlist →
-        </Link>
+        <div className="flex gap-3 justify-center flex-wrap">
+          <Link
+            href="/login"
+            className="inline-block border border-[#0e1117] px-7 py-3.5 rounded-md font-medium hover:bg-[#0e1117] hover:text-white transition"
+          >
+            Log in
+          </Link>
+          <Link
+            href="/signup"
+            className="inline-block bg-[#0e1117] text-[#ffffff] px-7 py-3.5 rounded-md font-medium hover:bg-[#0a8060] transition"
+          >
+            Join waitlist →
+          </Link>
+        </div>
       </section>
     </main>
   );
