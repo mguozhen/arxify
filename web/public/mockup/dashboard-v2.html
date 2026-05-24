@@ -1,0 +1,1787 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>arxify · Dashboard v2 (Notion mockup)</title>
+<style>
+  :root {
+    --bg-page: #ffffff;
+    --bg-sidebar: #f7f6f3;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f1ef;
+    --bg-peek-overlay: rgba(15, 15, 15, 0.2);
+    --bg-soft: #fbfaf9;
+    --border: #ebebea;
+    --border-strong: #d3d3d1;
+    --text-primary: #37352f;
+    --text-secondary: #787774;
+    --text-muted: #9b9a97;
+    --accent: #2383e2;
+
+    --pill-main-bg: #fdebeb;      --pill-main-text: #6e3a3a;
+    --pill-short-bg: #fbf0e1;     --pill-short-text: #6e5128;
+    --pill-cand-bg: #e3f0e9;      --pill-cand-text: #2d4a3e;
+    --pill-future-bg: #ededeb;    --pill-future-text: #555050;
+
+    /* Bar gradient: 1/5 red → 5/5 green */
+    --bar-1: #d93434;
+    --bar-2: #e07a3a;
+    --bar-3: #c89a2e;
+    --bar-4: #6fa14f;
+    --bar-5: #2c8a3e;
+    --bar-empty: #ebebea;
+
+    /* Source brand */
+    --claude-bg: #f5e9d9; --claude-text: #855218; --claude-dot: #cc7a3a;
+    --codex-bg:  #e7eef9; --codex-text:  #1f3d6e; --codex-dot:  #4a73b8;
+    --memory-bg: #e8f0ea; --memory-text: #2d4a3e; --memory-dot: #2c8a3e;
+    --miro-bg: #f1ecf8; --miro-text: #4b3470; --miro-dot: #7c55b2;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg-page);
+    color: var(--text-primary);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif;
+    font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: 240px; background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    flex-shrink: 0; display: flex; flex-direction: column;
+    transition: width 0.18s ease;
+  }
+  .sidebar.collapsed { width: 56px; }
+  .sidebar.collapsed .sb-label,
+  .sidebar.collapsed .sb-search,
+  .sidebar.collapsed .sb-section-title,
+  .sidebar.collapsed .sb-foot-email,
+  .sidebar.collapsed .sb-item-text { display: none; }
+  .sb-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; height: 44px;
+  }
+  .sb-brand { font-weight: 700; font-size: 15px; }
+  .sb-brand span { color: var(--accent); }
+  .sb-toggle {
+    background: transparent; border: none; color: var(--text-secondary);
+    cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 14px;
+  }
+  .sb-toggle:hover { background: var(--bg-hover); }
+  .sb-search {
+    margin: 4px 8px; display: flex; align-items: center; gap: 6px;
+    padding: 6px 8px; color: var(--text-secondary); border-radius: 4px;
+    font-size: 14px; cursor: pointer;
+  }
+  .sb-search:hover { background: var(--bg-hover); }
+  .sb-section-title {
+    padding: 14px 14px 4px; font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+  }
+  .sb-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 14px;
+    color: var(--text-primary); cursor: pointer; font-size: 14px; user-select: none;
+  }
+  .sb-item:hover { background: var(--bg-hover); }
+  .sb-item.is-page { padding-left: 26px; color: var(--text-secondary); }
+  .sb-item.is-active { background: var(--bg-hover); color: var(--text-primary); font-weight: 500; }
+  .sb-item-icon { width: 18px; text-align: center; flex-shrink: 0; }
+  .sb-foot {
+    margin-top: auto; border-top: 1px solid var(--border);
+    padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .sb-foot-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: linear-gradient(135deg, #5a8de8, #6a4dd1);
+    color: white; font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ─── Main ─── */
+  .main { flex: 1; overflow: auto; padding: 48px 80px 100px; max-width: 1100px; }
+  @media (max-width: 900px) { .main { padding: 32px 24px 80px; } }
+  .page-icon { font-size: 56px; line-height: 1; margin-bottom: 12px; }
+  .page-title { font-size: 40px; font-weight: 700; letter-spacing: -0.012em; margin: 0 0 4px; }
+  .page-meta { color: var(--text-secondary); font-size: 14px; margin-bottom: 6px; }
+  .page-desc { color: var(--text-secondary); font-size: 14px; max-width: 720px; line-height: 1.55; }
+
+  /* ─── Generate-new-hypothesis prompt entry ─── */
+  .generate-box {
+    margin-top: 28px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-soft);
+    padding: 14px 16px;
+  }
+  .generate-box-title {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .generate-box-title strong { color: var(--text-primary); font-weight: 600; }
+  .generate-input-row {
+    display: flex; gap: 8px; align-items: stretch;
+  }
+  .generate-input {
+    flex: 1; border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 12px;
+    font-size: 14px; font-family: inherit; resize: none;
+    background: var(--bg-page); color: var(--text-primary);
+    min-height: 60px;
+  }
+  .generate-input:focus { outline: none; border-color: var(--text-secondary); }
+  .model-picker {
+    display: flex; flex-direction: column; gap: 4px;
+    min-width: 110px;
+  }
+  .model-opt {
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 8px; cursor: pointer; font-size: 12px;
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg-page);
+  }
+  .model-opt.is-selected { border-color: var(--text-primary); background: var(--bg-page); }
+  .model-opt .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .model-opt.claude .dot { background: var(--claude-dot); }
+  .model-opt.codex .dot { background: var(--codex-dot); }
+  .generate-btn {
+    background: var(--text-primary); color: white;
+    border: none; border-radius: 6px;
+    padding: 0 18px; cursor: pointer; font-size: 13px;
+    font-weight: 500;
+  }
+  .generate-btn:hover { background: #1f1d18; }
+  .generate-btn:disabled { opacity: 0.4; cursor: wait; }
+  .generate-status { margin-top: 8px; font-size: 12px; color: var(--text-secondary); }
+
+  /* ─── Section block ─── */
+  .section { margin-top: 32px; }
+  .section-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 0; cursor: pointer; user-select: none;
+  }
+  .caret { color: var(--text-muted); font-size: 12px; width: 18px; text-align: center;
+           transition: transform 0.15s ease; }
+  .section.is-collapsed .caret { transform: rotate(-90deg); }
+  .section.is-collapsed .section-body { display: none; }
+  .section-icon { font-size: 18px; }
+  .section-title { font-size: 16px; font-weight: 600; margin: 0; }
+  .section-count { color: var(--text-muted); font-size: 13px; margin-left: 4px; }
+  .section-action {
+    margin-left: auto; color: var(--text-secondary); font-size: 13px;
+    padding: 4px 8px; border-radius: 4px; visibility: hidden;
+  }
+  .section-header:hover .section-action { visibility: visible; }
+  .section-action:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .section-body { padding: 8px 0 0 24px; }
+
+  /* ─── Sort/Group toolbar ─── */
+  .toolbar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 0 12px; flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .toolbar-label { color: var(--text-muted); font-size: 12px; margin-right: 4px; }
+  .chip {
+    padding: 4px 10px; border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary); cursor: pointer;
+    background: var(--bg-page); font-size: 12px;
+    user-select: none;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .chip:hover { background: var(--bg-hover); }
+  .chip.is-active {
+    background: var(--text-primary); color: white; border-color: var(--text-primary);
+  }
+  .chip-arrow { font-size: 10px; opacity: 0.9; margin-left: 4px; }
+
+  /* ─── Status sub-group ─── */
+  .group { margin-top: 18px; }
+  .group:first-child { margin-top: 8px; }
+  .group-label {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 10px; font-weight: 600;
+  }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  /* ─── Hypothesis card ─── */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px; cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    display: flex; flex-direction: column;
+    min-height: 220px; position: relative;
+  }
+  .card:hover { border-color: var(--border-strong); background: var(--bg-soft); }
+  .card.is-new {
+    animation: slide-in 0.4s ease;
+    border-color: var(--bar-5);
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 12px; font-weight: 500; margin-bottom: 8px; width: fit-content;
+  }
+  .pill.main { background: var(--pill-main-bg); color: var(--pill-main-text); }
+  .pill.shortlisted { background: var(--pill-short-bg); color: var(--pill-short-text); }
+  .pill.candidate { background: var(--pill-cand-bg); color: var(--pill-cand-text); }
+  .pill.future { background: var(--pill-future-bg); color: var(--pill-future-text); }
+
+  /* Source badge (Claude / Codex) */
+  .source-badge {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 10.5px; font-weight: 500;
+    padding: 2px 6px; border-radius: 3px;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.02em;
+  }
+  .source-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .source-badge.claude { background: var(--claude-bg); color: var(--claude-text); }
+  .source-badge.claude .dot { background: var(--claude-dot); }
+  .source-badge.codex { background: var(--codex-bg); color: var(--codex-text); }
+  .source-badge.codex .dot { background: var(--codex-dot); }
+  .source-badge.memory { background: var(--memory-bg); color: var(--memory-text); }
+  .source-badge.memory .dot { background: var(--memory-dot); }
+  .source-badge.miro { background: var(--miro-bg); color: var(--miro-text); }
+  .source-badge.miro .dot { background: var(--miro-dot); }
+
+  .card-meta {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;
+    letter-spacing: 0.01em;
+  }
+  .card-title {
+    font-size: 15px; font-weight: 600; line-height: 1.35;
+    margin: 0 0 8px; color: var(--text-primary);
+    padding-right: 70px;  /* avoid source badge overlap */
+  }
+  .card-quote {
+    color: var(--text-secondary); font-size: 13px; line-height: 1.5;
+    font-style: italic; margin: 0 0 12px;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-props {
+    margin-top: auto; border-top: 1px solid var(--border);
+    padding-top: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .prop { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .prop-label { color: var(--text-muted); flex-shrink: 0; min-width: 88px; }
+  .prop-bar {
+    flex: 1; height: 4px; background: var(--bar-empty);
+    border-radius: 2px; overflow: hidden;
+  }
+  .prop-bar-fill { height: 100%; border-radius: 2px; }
+  .prop-bar-fill.v-1 { background: var(--bar-1); }
+  .prop-bar-fill.v-2 { background: var(--bar-2); }
+  .prop-bar-fill.v-3 { background: var(--bar-3); }
+  .prop-bar-fill.v-4 { background: var(--bar-4); }
+  .prop-bar-fill.v-5 { background: var(--bar-5); }
+  .prop-num {
+    color: var(--text-secondary); font-variant-numeric: tabular-nums;
+    min-width: 28px; text-align: right;
+  }
+  .rating-row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; margin: 2px 0 9px;
+  }
+  .rating-score {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 22px; font-weight: 700; color: var(--text-primary);
+    letter-spacing: 0;
+  }
+  .rating-label {
+    color: var(--text-muted); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.07em; font-weight: 600;
+  }
+
+  /* ─── Data source row ─── */
+  .ds-list { display: flex; flex-direction: column; gap: 8px; }
+  .ds-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg-card); cursor: pointer;
+  }
+  .ds-card:hover { background: var(--bg-soft); border-color: var(--border-strong); }
+  .ds-icon {
+    width: 28px; height: 28px; border-radius: 4px; background: var(--bg-hover);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .ds-name { font-weight: 500; font-size: 14px; }
+  .ds-stats { color: var(--text-secondary); font-size: 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .ds-desc { color: var(--text-muted); font-size: 12px; margin-left: auto; flex-shrink: 0; }
+
+  /* ─── Chat / Waitlist preview ─── */
+  .preview-block {
+    padding: 12px 16px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg-card);
+    color: var(--text-secondary); font-size: 13px; font-style: italic;
+  }
+  .preview-cta { color: var(--accent); cursor: pointer; font-style: normal; margin-top: 6px; display: inline-block; }
+
+  /* ─── Side peek ─── */
+  .peek-overlay { position: fixed; inset: 0; background: var(--bg-peek-overlay); display: none; z-index: 100; }
+  .peek-overlay.is-open { display: block; }
+  .peek-panel {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(720px, 65vw); background: var(--bg-page);
+    box-shadow: -2px 0 16px rgba(15,15,15,0.06);
+    z-index: 101; transform: translateX(100%);
+    transition: transform 0.22s ease;
+    display: flex; flex-direction: column;
+  }
+  .peek-panel.is-open { transform: translateX(0); }
+  .peek-scroll { flex: 1; overflow: auto; padding: 24px 36px 24px; }
+  .peek-close {
+    position: absolute; top: 16px; right: 20px; background: transparent;
+    border: none; font-size: 18px; color: var(--text-secondary);
+    cursor: pointer; padding: 4px 8px; border-radius: 4px; z-index: 2;
+  }
+  .peek-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .peek-content h1 {
+    font-size: 28px; line-height: 1.25; margin: 12px 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .peek-content h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); margin: 22px 0 6px; font-weight: 600;
+  }
+  .peek-content p { margin: 0 0 6px; line-height: 1.6; color: var(--text-primary); font-size: 14px; }
+  .peek-content .quote {
+    font-style: italic; color: var(--text-secondary);
+    border-left: 2px solid var(--border-strong); padding-left: 12px; margin: 4px 0 0;
+  }
+  .peek-content pre.diagram {
+    background: var(--bg-soft); border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px 16px; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px; line-height: 1.5; color: var(--text-primary);
+    overflow-x: auto;
+    margin: 6px 0 0;
+  }
+  .peek-content .example-block {
+    background: #fffae0; border-left: 3px solid #f1d97a;
+    padding: 10px 14px; border-radius: 0 6px 6px 0;
+    font-size: 13.5px; line-height: 1.6; color: #5e4a00;
+    margin: 6px 0 0;
+  }
+  .peek-meta-row {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin: 4px 0 0;
+  }
+  .peek-footer-actions {
+    margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);
+    display: flex; gap: 8px;
+  }
+  .peek-open-full {
+    color: var(--text-primary); border: 1px solid var(--border-strong);
+    border-radius: 4px; padding: 6px 12px; font-size: 13px;
+    cursor: pointer; text-decoration: none; background: var(--bg-page);
+  }
+  .peek-open-full:hover { background: var(--bg-hover); }
+
+  /* peek-bottom chat */
+  .peek-chat {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    padding: 12px 36px 16px;
+    background: var(--bg-soft);
+  }
+  .peek-chat-title {
+    font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 600;
+  }
+  .peek-chat-row { display: flex; gap: 8px; align-items: stretch; }
+  .peek-chat-input {
+    flex: 1; border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; font-size: 13px; font-family: inherit;
+    background: var(--bg-page); color: var(--text-primary);
+    min-height: 40px; resize: none;
+  }
+  .peek-chat-input:focus { outline: none; border-color: var(--text-secondary); }
+  .peek-chat-send {
+    background: var(--text-primary); color: white; border: none;
+    border-radius: 6px; padding: 0 14px; cursor: pointer; font-size: 13px;
+  }
+  .peek-chat-send:disabled { opacity: 0.4; }
+  .peek-chat-log {
+    margin-top: 8px; max-height: 130px; overflow: auto;
+    font-size: 12.5px; line-height: 1.5;
+  }
+  .peek-chat-log .msg { padding: 5px 0; }
+  .peek-chat-log .msg.user { color: var(--text-primary); }
+  .peek-chat-log .msg.assistant { color: var(--text-secondary); font-style: italic; }
+
+  /* ─── Modal (data source / paper generate) ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(15,15,15,0.45);
+    display: none; z-index: 200;
+    align-items: flex-start; justify-content: center; padding-top: 6vh;
+  }
+  .modal-overlay.is-open { display: flex; }
+  .modal {
+    background: var(--bg-page); border-radius: 8px;
+    width: min(640px, 92vw); max-height: 86vh; overflow: auto;
+    box-shadow: 0 12px 40px rgba(15,15,15,0.18);
+    padding: 24px 28px;
+  }
+  .modal h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .modal .modal-sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 18px; }
+  .modal-close {
+    float: right; background: transparent; border: none; font-size: 18px;
+    color: var(--text-secondary); cursor: pointer; padding: 4px 8px;
+    border-radius: 4px; margin-top: -8px; margin-right: -8px;
+  }
+  .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .ds-type-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px; margin-top: 4px;
+  }
+  .ds-type {
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px 12px; cursor: pointer; text-align: center;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .ds-type:hover { border-color: var(--text-secondary); background: var(--bg-soft); }
+  .ds-type-icon { font-size: 24px; margin-bottom: 6px; }
+  .ds-type-name { font-size: 13px; font-weight: 500; }
+  .ds-type-desc { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  .form-row { margin: 12px 0; }
+  .form-row label {
+    display: block; font-size: 12px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .form-row input, .form-row textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; font-size: 14px; font-family: inherit;
+    background: var(--bg-page); color: var(--text-primary);
+  }
+  .form-row input:focus, .form-row textarea:focus {
+    outline: none; border-color: var(--text-secondary);
+  }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .btn-primary {
+    background: var(--text-primary); color: white; border: none;
+    border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 13px;
+    font-weight: 500;
+  }
+  .btn-primary:hover { background: #1f1d18; }
+  .btn-secondary {
+    background: var(--bg-page); color: var(--text-primary);
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    padding: 8px 16px; cursor: pointer; font-size: 13px;
+  }
+  .btn-secondary:hover { background: var(--bg-hover); }
+  .file-drop {
+    border: 2px dashed var(--border-strong); border-radius: 6px;
+    padding: 28px; text-align: center; color: var(--text-secondary);
+    cursor: pointer; font-size: 13px;
+  }
+  .file-drop:hover { background: var(--bg-soft); }
+
+  /* ─── Paper card ─── */
+  .papers-list { display: flex; flex-direction: column; gap: 10px; }
+  .paper-card {
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg-card);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .paper-card:hover { border-color: var(--border-strong); background: var(--bg-soft); }
+  .paper-thumb {
+    width: 60px; height: 78px; flex-shrink: 0;
+    background: linear-gradient(180deg, #fbfaf8 0%, #ebebea 100%);
+    border: 1px solid var(--border);
+    border-radius: 4px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--text-muted);
+    box-shadow: 0 1px 2px rgba(15,15,15,0.05);
+  }
+  .paper-thumb::before {
+    content: ""; position: absolute; top: 0; right: 0;
+    width: 14px; height: 14px;
+    background: linear-gradient(225deg, transparent 50%, var(--bg-hover) 50%);
+  }
+  .paper-info { flex: 1; min-width: 0; }
+  .paper-status {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 500;
+    background: #e3f0e9; color: #2d4a3e; margin-bottom: 4px;
+  }
+  .paper-status.draft { background: #fbf0e1; color: #6e5128; }
+  .paper-status.generating { background: #e7eef9; color: #1f3d6e; }
+  .paper-title {
+    font-size: 15px; font-weight: 600; line-height: 1.3;
+    margin: 0 0 4px;
+  }
+  .paper-meta {
+    color: var(--text-secondary); font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .paper-actions {
+    display: flex; gap: 6px; flex-shrink: 0;
+  }
+  .paper-btn {
+    border: 1px solid var(--border-strong); background: var(--bg-page);
+    color: var(--text-primary); padding: 6px 10px;
+    font-size: 12px; border-radius: 4px;
+    cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .paper-btn:hover { background: var(--bg-hover); }
+  .paper-btn.primary {
+    background: var(--text-primary); color: white; border-color: var(--text-primary);
+  }
+  .paper-btn.primary:hover { background: #1f1d18; }
+
+  .progress-row {
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg-soft); padding: 12px 16px;
+    font-size: 13px; color: var(--text-secondary);
+    margin-top: 8px;
+  }
+  .progress-row .stage {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 0;
+  }
+  .progress-row .stage .ind {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 1px solid var(--border-strong); background: var(--bg-page);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: white;
+  }
+  .progress-row .stage.is-done .ind { background: var(--bar-5); border-color: var(--bar-5); }
+  .progress-row .stage.is-done .ind::after { content: "✓"; }
+  .progress-row .stage.is-active .ind {
+    background: var(--bar-3); border-color: var(--bar-3);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+  }
+  .progress-row .stage.is-active { color: var(--text-primary); }
+
+  .mockup-banner {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: #fffae0; color: #6b5400; border: 1px solid #f1d97a;
+    border-radius: 4px; padding: 6px 14px; font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; z-index: 200;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-top">
+      <div class="sb-brand sb-label">arxify<span>.io</span></div>
+      <button class="sb-toggle" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" title="Collapse">«</button>
+    </div>
+    <div class="sb-search"><span>🔍</span><span class="sb-label">Search</span></div>
+    <div class="sb-section-title sb-label">Workspace</div>
+    <div class="sb-item"><span class="sb-item-icon">▼</span><span class="sb-item-icon">🎓</span><span class="sb-item-text">HKU DBA</span></div>
+    <div class="sb-item is-page is-active" onclick="scrollToSection(event, 'hypotheses')"><span class="sb-item-icon">📋</span><span class="sb-item-text">Hypotheses</span></div>
+    <div class="sb-item is-page" onclick="scrollToSection(event, 'data')"><span class="sb-item-icon">🗄</span><span class="sb-item-text">Data sources</span></div>
+    <div class="sb-item is-page" onclick="scrollToSection(event, 'papers')"><span class="sb-item-icon">📄</span><span class="sb-item-text">Papers</span></div>
+    <div class="sb-item is-page" onclick="scrollToSection(event, 'chat')"><span class="sb-item-icon">💬</span><span class="sb-item-text">AI Advisor</span></div>
+    <div class="sb-item is-page" onclick="scrollToSection(event, 'queue')"><span class="sb-item-icon">📬</span><span class="sb-item-text">Waitlist</span></div>
+    <div class="sb-item" style="color: var(--text-muted); margin-top: 8px;"><span class="sb-item-icon">+</span><span class="sb-item-text">New workspace</span></div>
+    <div class="sb-foot">
+      <div class="sb-foot-avatar">MG</div>
+      <div class="sb-foot-email sb-label">mguozhen@gmail.com</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-icon">🎓</div>
+    <h1 class="page-title">HKU DBA Dissertation</h1>
+    <div class="page-meta">LLM Customer Service · Defense Nov 2026 · <span id="hypTotalLabel">17</span> directions · sorted by academic value</div>
+    <p class="page-desc">Ranking rebuilt from claude-mem, MiroThinker artifacts, AI-Scientist outputs, and live DB join validation across GPT/QAM/Cactus/Tars. Core update: verified data joins now outrank easy prompt A/B ideas.</p>
+
+    <!-- ═══════ Generate new hypothesis ═══════ -->
+    <div class="generate-box">
+      <div class="generate-box-title">
+        <span>✨</span><strong>Generate a new hypothesis</strong>
+        <span style="color: var(--text-muted);">— describe a direction; pick an engine; add it to the gallery.</span>
+      </div>
+      <div class="generate-input-row">
+        <textarea class="generate-input" id="genInput" placeholder="例: 节假日高峰期 AI 处理质量是否反向下降? 或: 客户在 day-1 vs day-30 给 AI 的差评模式有什么不同?"></textarea>
+        <div class="model-picker">
+          <div class="model-opt claude is-selected" data-model="claude" onclick="pickModel('claude')">
+            <span class="dot"></span><span>Claude</span>
+          </div>
+          <div class="model-opt codex" data-model="codex" onclick="pickModel('codex')">
+            <span class="dot"></span><span>Codex</span>
+          </div>
+        </div>
+        <button class="generate-btn" id="genBtn" onclick="generateNew()">Generate →</button>
+      </div>
+      <div class="generate-status" id="genStatus"></div>
+    </div>
+
+    <!-- ═══════ Hypotheses ═══════ -->
+    <section class="section" id="hypotheses">
+      <header class="section-header" onclick="toggleSection(this.parentElement)">
+        <span class="caret">▼</span>
+        <span class="section-icon">📋</span>
+        <h2 class="section-title">Hypotheses</h2>
+        <span class="section-count" id="hypCountLabel">17</span>
+        <span class="section-action">+ New</span>
+      </header>
+      <div class="section-body">
+        <div class="toolbar">
+          <span class="toolbar-label">Group / sort:</span>
+          <span class="chip is-active" data-view="rating" onclick="setView('rating')">Academic value<span class="chip-arrow" style="display:none"></span></span>
+          <span class="chip" data-view="status" onclick="setView('status')">Status</span>
+          <span class="chip" data-view="source" onclick="setView('source')">Source</span>
+          <span class="chip" data-view="feasibility" onclick="setView('feasibility')">Feasibility<span class="chip-arrow" style="display:none"></span></span>
+          <span class="chip" data-view="difficulty" onclick="setView('difficulty')">A/B difficulty<span class="chip-arrow" style="display:none"></span></span>
+        </div>
+        <div id="hypBody"></div>
+      </div>
+    </section>
+
+    <!-- ═══════ Data sources ═══════ -->
+    <section class="section" id="data">
+      <header class="section-header" onclick="toggleSection(this.parentElement)">
+        <span class="caret">▼</span><span class="section-icon">🗄</span>
+        <h2 class="section-title">Data sources</h2>
+        <span class="section-count" id="dsCountLabel">8</span>
+        <span class="section-action" onclick="event.stopPropagation(); openDsModal()">+ Connect</span>
+      </header>
+      <div class="section-body">
+        <div class="ds-list" id="dsList"></div>
+      </div>
+    </section>
+
+    <!-- ═══════ Papers ═══════ -->
+    <section class="section" id="papers">
+      <header class="section-header" onclick="toggleSection(this.parentElement)">
+        <span class="caret">▼</span><span class="section-icon">📄</span>
+        <h2 class="section-title">Papers</h2>
+        <span class="section-count" id="paperCountLabel">2</span>
+        <span class="section-action" onclick="event.stopPropagation(); openPaperModal()">+ Generate</span>
+      </header>
+      <div class="section-body">
+        <div class="papers-list" id="papersList"></div>
+      </div>
+    </section>
+
+    <!-- ═══════ AI Advisor ═══════ -->
+    <section class="section is-collapsed" id="chat">
+      <header class="section-header" onclick="toggleSection(this.parentElement)">
+        <span class="caret">▼</span><span class="section-icon">💬</span>
+        <h2 class="section-title">AI Advisor</h2>
+        <span class="section-count">Chat with workspace context</span>
+      </header>
+      <div class="section-body">
+        <div class="preview-block">Ask anything about your 17 directions, data sources, or advisor strategy.
+          <div class="preview-cta">Open chat →</div></div>
+      </div>
+    </section>
+
+    <!-- ═══════ Waitlist ═══════ -->
+    <section class="section is-collapsed" id="queue">
+      <header class="section-header" onclick="toggleSection(this.parentElement)">
+        <span class="caret">▼</span><span class="section-icon">📬</span>
+        <h2 class="section-title">Waitlist</h2><span class="section-count">Admin only</span>
+      </header>
+      <div class="section-body"><div class="preview-block">Waitlist progress · referrals · share link</div></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ════════════ Side Peek ════════════ -->
+<div class="peek-overlay" id="peekOverlay" onclick="closePeek()"></div>
+<aside class="peek-panel" id="peekPanel">
+  <button class="peek-close" onclick="closePeek()">✕</button>
+  <div class="peek-scroll">
+    <div id="peekContent" class="peek-content"></div>
+    <div class="peek-footer-actions">
+      <a href="#" class="peek-open-full" id="peekFullLink" onclick="event.preventDefault();alert('In real product: navigates to /dashboard/hypothesis/' + (window.__peekCode || 'H3'))">Open full page →</a>
+    </div>
+  </div>
+  <div class="peek-chat">
+    <div class="peek-chat-title">✦ Refine this hypothesis via chat</div>
+    <div class="peek-chat-row">
+      <textarea class="peek-chat-input" id="peekChatInput" placeholder="例: 把 outcome 改成 30-day churn / 加入控制 tenant FE / 把样本限制在订阅客户"></textarea>
+      <button class="peek-chat-send" onclick="sendRefinement()">Send</button>
+    </div>
+    <div class="peek-chat-log" id="peekChatLog"></div>
+  </div>
+</aside>
+
+<!-- ════════════ Modal: Add Data Source ════════════ -->
+<div class="modal-overlay" id="dsModalOverlay" onclick="if(event.target===this)closeDsModal()">
+  <div class="modal" id="dsModal">
+    <button class="modal-close" onclick="closeDsModal()">✕</button>
+    <h2 id="dsModalTitle">Connect a data source</h2>
+    <div class="modal-sub" id="dsModalSub">Pick a connector to bring data into your workspace.</div>
+    <div id="dsModalBody"></div>
+  </div>
+</div>
+
+<!-- ════════════ Modal: Generate Paper ════════════ -->
+<div class="modal-overlay" id="paperModalOverlay" onclick="if(event.target===this)closePaperModal()">
+  <div class="modal" id="paperModal">
+    <button class="modal-close" onclick="closePaperModal()">✕</button>
+    <h2>Generate a paper</h2>
+    <div class="modal-sub">Pick a hypothesis. The pipeline runs <strong>ideation → experiment design → DeepCritique → LaTeX writeup → PDF</strong> — typically 12-30 minutes for a chapter draft.</div>
+    <div id="paperModalBody"></div>
+  </div>
+</div>
+
+<div class="mockup-banner">⚠ Static mockup · interactions stubbed</div>
+
+<script>
+// ────────────────────────────────────────────────────────────
+// DATA
+// ────────────────────────────────────────────────────────────
+const DATA_SOURCES = [
+  { icon: "🐬", name: "cactus_prod",         stats: "322 表 · 1.9B 行 · 4 TB",     desc: "老工单系统 + 客服核心数据" },
+  { icon: "🐬", name: "tars_prod_app",       stats: "94 表 · 329M 行 · 237 GB",    desc: "新一代工单系统 (cactus 继任者)" },
+  { icon: "🐬", name: "shulex_gpt_prod",     stats: "106 表 · 69M 行 · 220 GB",    desc: "BOT / LLM 客服系统" },
+  { icon: "🐬", name: "shulex_qam_prod",     stats: "30 表 · 81M 行 · 43 GB",      desc: "QAM 知识库" },
+  { icon: "🐬", name: "shulex_voc_prod_v2",  stats: "105 表 · 132M 行",            desc: "VOC AI 评论智能产品" },
+  { icon: "🐬", name: "shulex_collector_prod", stats: "13 表 · 622M 行 · 2.1 TB",  desc: "原始日志库" },
+  { icon: "⚙", name: "AI-Scientist-v2 + MiroThinker", stats: "api · Claude Sonnet 4.5 + MiroThinker Deep", desc: "本地 ideation pipeline" },
+  { icon: "📄", name: "discovery_engine_h3_paper_v2", stats: "PDF + md + docx",     desc: "已完稿 H3 论文 v2" }
+];
+
+// 17 hypotheses
+let HYPOTHESES = [
+  {
+    code: "H3", status: "main", journal: "Management Science", source: "claude", feas: 5, diff: 3,
+    title: "The Handoff Agency Paradox",
+    paradox: "AI 自主转人工是诚信信号，系统强转无效果 — 同样的转人工事件，自主决定的客户 NPS 高 2.7 分",
+    hypothesis: "客户对 AI 主动建议转人工的解读 = 诚信信号；对 system-forced handoff 的解读 = 无能信号。同样的转人工动作，框架不同，NPS 差 2.7。",
+    identification: "Solvea 14M conversation × 8.7M handoff。利用 confidence score 阈值附近 RDD。同 tenant 同时段 propensity match。",
+    anchor: "Signaling theory (Spence 1973); Service recovery; Attribution theory",
+    experiment: "我们要回答的问题：同样把客户从 AI 转给人工，'AI 自己说让我转给你'和'系统超时强转'的客户反应一样吗？做法：从 2024-01 ~ 2024-12 的 8.7M handoff 事件里抽两组：A = AI confidence 低主动建议转的；B = 客户重试 3 次或超时被强转的。用 propensity score 在同 tenant 同时段同问题类型匹配。看后续 24h CSAT / 7d NPS / 30d churn。",
+    example: "客户问『我退款啥时候到』。情境 A: AI 试两次没解决，主动说『让我帮你转人工』→ NPS 8/10。情境 B: 客户连发 3 次 follow-up，系统超时自动转 → NPS 5/10。同问题、同 agent 处理、同结果，只因为转的『谁主动』，客户体感差 3 分。",
+    architecture:
+`Solvea data lake (8.7M handoff events, 2024)
+       │
+       ▼
+┌────────────────────────────┐
+│ Split by handoff trigger   │
+└────────────────────────────┘
+   ╱                ╲
+  ▼                  ▼
+[A] AI-initiated   [B] Rule-forced
+ (AI confidence)    (timeout / retry)
+   ╲                ╱
+    ▼              ▼
+  Propensity match
+  same tenant · time · query type
+       │
+       ▼
+  Outcomes (24h CSAT · 7d NPS · 30d churn)`
+  },
+  {
+    code: "D8", status: "main", journal: "Management Science", source: "claude", feas: 5, diff: 1,
+    title: "Follow-up Signal Paradox ⭐",
+    paradox: "Auto follow-up 发到第 3-4 条客户开始反感. 拐点之后回复率反跌、投诉飙升",
+    hypothesis: "Auto follow-up 的边际效用单调递减并在第 3-4 条出现拐点，之后效用变成负的。",
+    identification: "24 个月自动跟进数据，N=百万级。within-customer panel 跨 N=1/2/3/4/5。Discontinuity test 在 N=3→N=4。",
+    anchor: "Reciprocity (Cialdini); Reactance theory (Brehm 1966)",
+    experiment: "把 24 个月的 auto follow-up 数据按客户聚合（每个客户被发 N 条 follow-up，N=1..k）。对每条 follow-up 记录：(a) 回复率 (b) 负面情感率 (c) 投诉/拉黑率。如果是线性递减，paradox 不成立；如果 N=3→N=4 出现明显 discontinuity（reply 跌幅 >50% 同时 complaint 飙升），就支持 paradox。",
+    example: "客户 Anna 买了一支口红。Day-7 follow-up『How's your purchase?』→ 回复率 12% 正向。Day-14『Still loving it?』→ 8% 中性。Day-21『We'd love to hear from you』→ 4% 开始负向。Day-28『Last chance to share』→ 1% 回复，30% 触发投诉/取消订阅。第 4 条就是拐点。",
+    architecture:
+`Auto follow-up data (24 months · all customers)
+       │
+       ▼
+  Per-customer panel
+  ┌────┬────┬────┬────┬────┐
+  │ N1 │ N2 │ N3 │ N4 │ N5 │  ← follow-up sequence
+  └────┴────┴────┴────┴────┘
+       │
+       ▼
+  For each N: reply / sentiment / complaint
+       │
+       ▼
+  Discontinuity test  ← break point?
+   N=3 ──────  threshold? ──────  N=4
+   safe                    danger`
+  },
+  {
+    code: "D11", status: "main", journal: "Journal of Marketing", source: "claude", feas: 5, diff: 1,
+    title: "AI Humility Paradox",
+    paradox: "AI 说『我不太确定但可能是 X』反而比 100% 笃定回答更被信任",
+    hypothesis: "AI 显性 hedging → 客户信任 +；与『AI 必须自信』的产品常识相反。",
+    identification: "live AB test 同一答案 2 种 wording。10K+ session 即可。",
+    anchor: "Source credibility (Hovland); Tentativeness in expert advice (Tenney et al. 2007)",
+    experiment: "live AB test：同一 LLM 答案配 2 种 wording — (A) '答案是 X.' (B) '我不 100% 确定，但大概率是 X — 如果不对告诉我.' 随机分配。比较 (1) 客户给的 1-5 满意度评分 (2) 后续追问率 (3) 转人工率。",
+    example: "客户：『穿过的衣服可以退吗？』 A 版：『Yes, you can return worn items within 30 days.』 B 版：『I'm not 100% sure for your case, but typically yes — 穿过的可在 30 天内退。要不要我帮你 double check 政策？』 → B 在 trust 评分 +0.4，追问率减半。",
+    architecture:
+`Live customer query (random 50/50)
+            │
+       ╱        ╲
+      ▼          ▼
+  [A] Confident  [B] Hedged
+   "It's X."     "I'm not sure, but likely X."
+       ╲          ╱
+        ▼        ▼
+    Customer rating + behavior
+    · trust 1-5
+    · follow-up question rate
+    · escalation to human rate`
+  },
+  {
+    code: "D1", status: "shortlisted", journal: "Journal of Marketing", source: "claude", feas: 5, diff: 2,
+    title: "Engagement Fatigue Paradox",
+    paradox: "Visit-1 fb=3.99 → visit 4-5 fb=2.44 (跌 40%). 客户越用 AI 越烦",
+    hypothesis: "AI service 的 repeated use 单调降低满意度，反直觉 'familiarity premium'。",
+    identification: "Within-customer panel 6 months · 控制问题类型 / agent / 基线满意度。",
+    anchor: "Habituation; Service experience evolution",
+    experiment: "找过去 6 个月联系过 5+ 次 AI 的同一批 100K 客户。逐次记录 CSAT / AHT / 投诉。Within-subject 看是否单调下降。控制问题类型 + 时间 + 客户基线。",
+    example: "Anna 第 1 次问退货：『好快，5 分钟搞定。』CSAT=5。第 2 次问发货：『还行。』CSAT=4。第 5 次又问退货：『又是这破 AI，根本不懂。』CSAT=2。同一个 AI、同类问题，第 5 次满意度只剩 40%。",
+    architecture:
+`Customer panel (6 months, 100K customers, 5+ visits each)
+       │
+       ▼
+ Per-customer trajectory
+   Visit 1: CSAT=4.5
+   Visit 2: CSAT=4.1
+   Visit 3: CSAT=3.6
+   Visit 4: CSAT=2.9
+   Visit 5: CSAT=2.4
+       │
+       ▼
+  Fixed effects regression
+  (controls: tenant · ticket type · agent · baseline)`
+  },
+  {
+    code: "D5", status: "shortlisted", journal: "MISQ", source: "claude", feas: 3, diff: 5,
+    title: "TARS Migration as Natural Experiment",
+    paradox: "27.8 万工单从 cactus 迁到 tars — 同 tenant 同客户 pre-post 比较",
+    hypothesis: "客服系统升级（人 + 算法 + UI 全套）对 agent 行为和客户结果的多通道因果效应。",
+    identification: "Staggered DiD across 280 tenants migrating 2024-2025.",
+    anchor: "Technology adoption; IS success model",
+    experiment: "280 个 tenant 在 24 个月内分批迁。每个 tenant 取迁移前/后各 90 天，比较 resolution time / CSAT / escalation / agent productivity。用 staggered event study 估 ATT。控制 tenant FE + time FE。",
+    example: "Acme Cosmetics 2024-06 迁过去：迁移前 90 天平均工单解决 4.2h，CSAT 4.1；迁移后 3.1h，CSAT 4.3。同期没迁的 BetaBrands 4.0h→4.1h，CSAT 4.0→4.0。证 Acme 的 1.1h 加速来自系统迁移而非时间趋势。",
+    architecture:
+`280 tenants × 24 months migration window
+       │
+       ▼
+ Staggered DiD setup
+ ┌────────────────────────────────┐
+ │ tenant A: ──cactus──╋──tars──→ │
+ │ tenant B: ──cactus──────╋tars→ │
+ │ tenant C: ─cactus────────────→ │
+ └────────────────────────────────┘
+       │
+       ▼
+ Outcome:
+  · resolution time
+  · CSAT
+  · escalation rate
+  · agent productivity`
+  },
+
+  // candidate / future — abbreviated
+  { code: "D12", status: "candidate", journal: "Management Science", source: "codex", feas: 5, diff: 1,
+    title: "Faked Thinking Paradox",
+    paradox: "AI 秒回让客户觉得敷衍; 故意慢 5 秒 + '正在思考...'反而觉得专业",
+    hypothesis: "AI 加入 artificial latency + thinking indicator → 客户感知专业度 +。",
+    identification: "AB test on Solvea live; 0s vs 3s vs 5s artificial delay.",
+    anchor: "Effort heuristic (Kruger 2004); Processing fluency disfluency",
+    experiment: "TBD — refine via chat below.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D13", status: "candidate", journal: "Marketing Science", source: "codex", feas: 4, diff: 2,
+    title: "Compensation Attribution Paradox",
+    paradox: "同样 10 元优惠券, AI 自动派 vs 人工特批客户心理价值差异显著",
+    hypothesis: "同样金额的补偿，归因到『人工特批』感知价值 > 归因到『AI 自动派』。",
+    identification: "AB test 同样 voucher 不同归因 framing.",
+    anchor: "Mental accounting (Thaler); Attribution theory",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D14", status: "candidate", journal: "MISQ", source: "claude", feas: 4, diff: 3,
+    title: "AI-Human Detection Mismatch Paradox",
+    paradox: "被 AI 标记的工单, 人工修复效果反而比未标记的相同严重度工单更差",
+    hypothesis: "AI 检测打标会扭曲 agent 的认知和行为，导致 selection effect 反向作用。",
+    identification: "Compare tagged-by-AI vs untagged at same severity score.",
+    anchor: "Algorithmic aversion; Cognitive priming",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D15", status: "candidate", journal: "JCR", source: "codex", feas: 3, diff: 2,
+    title: "Frictionless Recovery Paradox",
+    paradox: "AI 秒处理投诉 → 即时满意度高 + 长期续约率反而低",
+    hypothesis: "service recovery 的短期 vs 长期效用分叉：太顺反而没记忆点。",
+    identification: "Match by complaint severity; track 12-month retention.",
+    anchor: "Peak-end rule; Recovery paradox literature",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D16", status: "candidate", journal: "JCR / Org Sci", source: "codex", feas: 3, diff: 2,
+    title: "Moral Distance Paradox",
+    paradox: "AI 道歉后再人工道歉, 反而稀释道歉信号; 仅人道歉效果更好",
+    hypothesis: "Double apology dilutes; AI apology contaminates subsequent human apology.",
+    identification: "AB: AI-only / human-only / AI→human apology sequence.",
+    anchor: "Moral distance; Apology research (Lazare)",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D20", status: "candidate", journal: "Journal of Marketing", source: "claude", feas: 4, diff: 3,
+    title: "AI Recovery Substitution Paradox",
+    paradox: "AI 失败创造的人工修复机会, 比人工自己制造的失败的修复效果更好 +18% NPS",
+    hypothesis: "AI 失败 → 人工 recovery 比 human failure → human recovery 信号价值高。",
+    identification: "Match failure types between AI-caused and human-caused.",
+    anchor: "Service recovery paradox; Counterfactual reasoning",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D24", status: "candidate", journal: "Org Sci", source: "claude", feas: 4, diff: 4,
+    title: "Emotional Labor Intensification Paradox",
+    paradox: "AI 替代轻松工单 → 人工只剩情绪密集工单 → AHT +9% + 后半 shift 拒绝率飙升",
+    hypothesis: "AI takes the easy, humans get the hard — emotional labor concentrates.",
+    identification: "Within-agent before/after AI deployment; emotion-tagged tickets.",
+    anchor: "Emotional labor (Hochschild); Job intensification",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D17", status: "future", journal: "Org Sci", source: "claude", feas: 3, diff: 4,
+    title: "Recovery-Legitimacy Paradox",
+    paradox: "显性人工恢复 → 显得平台越无能 → 侵蚀算法合法性",
+    hypothesis: "Visible human recovery undermines algorithmic legitimacy.",
+    identification: "Survey + behavioral; visible vs invisible human intervention.",
+    anchor: "Legitimacy theory; Algorithmic authority",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D18", status: "future", journal: "Org Sci", source: "codex", feas: 3, diff: 3,
+    title: "Delegated Accountability Paradox",
+    paradox: "AI + 人工双层流程, 反而比纯人工质量低 — 双方都不真正担责",
+    hypothesis: "Diffusion of responsibility in human-AI hybrid pipelines.",
+    identification: "Compare AI-only / human-only / hybrid pipelines on same task.",
+    anchor: "Bystander effect; Algorithmic accountability",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D19", status: "future", journal: "MISQ", source: "codex", feas: 4, diff: 3,
+    title: "Algorithmic Escalation Paradox",
+    paradox: "AI 触发升级的工单, agent 视为『AI 烦我』而非『客户问题』, 处理质量下降",
+    hypothesis: "AI-triggered escalations carry stigma → degraded human processing.",
+    identification: "AI-triggered vs customer-triggered escalations, matched.",
+    anchor: "Algorithmic aversion; Source contamination",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D21", status: "future", journal: "MISQ", source: "codex", feas: 2, diff: 5,
+    title: "Algorithmic Commoning Paradox",
+    paradox: "早期 tenant 给晚期 tenant 提供 AI 学习外溢, 后者免费搭车却丧失差异化",
+    hypothesis: "Multi-tenant model learning creates commons spillover but kills differentiation.",
+    identification: "Tenant cohort comparison by adoption order.",
+    anchor: "Commons / spillover; Platform economics",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  },
+  { code: "D22", status: "future", journal: "Mgmt Sci (POM)", source: "codex", feas: 3, diff: 4,
+    title: "AI Congestion Paradox",
+    paradox: "AI 智能升级反而制造人工瓶颈 — 集中升级时点超过人工容量",
+    hypothesis: "Smart escalation creates bursty congestion human can't absorb.",
+    identification: "Queue theory + tenant-level escalation timing data.",
+    anchor: "Operations management; Queue dynamics",
+    experiment: "TBD.", example: "TBD.", architecture: "(generate after refinement)"
+  }
+];
+
+// Current ranking rebuilt on 2026-05-15 from:
+// 1) claude-mem observations 1564/1566/1571/1644/1651/1654
+// 2) MiroThinker outputs: miromind_5_new_directions.md, miromind_top2_deep.md
+// 3) AI-Scientist outputs: regression_ranked.md, regression_tournament.md
+// 4) live DB scan docs: database_research_map.md, hypothesis_priority_after_database_scan.md
+HYPOTHESES = [
+  {
+    code: "R1", status: "main", journal: "MISQ / Mgmt Sci / Org Sci", source: "memory",
+    rating: 9.3, feas: 4, diff: 3,
+    title: "Detection-Recovery Mismatch Paradox",
+    paradox: "AI 能检测出问题，不代表组织能修复问题；被 AI 标记的工单反而更容易进入人工摩擦区。",
+    hypothesis: "在相似严重度下，AI inspection flagged conversations 比 unflagged cases 更可能发生 handoff、unassign、waiting 或低质量人工恢复，说明算法检测会触发诊断替代和责任稀释。",
+    identification: "已验证 account 160583: ai_inspection -> transcript -> Cactus tickets -> ticket_reports -> ai_issues。主规格用 matched flagged/unflagged tickets、tenant-week FE、severity controls；下一步寻找 inspection-rule threshold/shock。",
+    anchor: "Algorithmic supervision; automation bias; service recovery; human-AI teaming",
+    experiment: "主数据集以 ticket/chat 为 grain。IV 是 ai_inspection.questionable 与具体 red-flag family；DV 是 resolved/waiting/unassign、handoff/takeover、AI vs agent response mix、first/avg reply time、ai_issue。",
+    example: "最近一天验证样本中，questionable=1 约 102 个 ticket，resolved 52、unassign 34；questionable=0 约 1391 个 ticket，resolved 1016、unassign 52。不是因果结论，但异常足够强，值得做主文。",
+    architecture:
+`shulex_gpt_prod.ai_inspection
+  -> (tenant_Id, chat_id)
+shulex_gpt_prod.transcript
+  -> (tenant_id, chat_id)
+cactus_prod.tickets
+  -> (account_id=tenant_id, ticket_number=chat_id)
+cactus_prod.ticket_reports
+  -> ticket_id
+cactus_prod.ai_issues
+  -> ticket_id`
+  },
+  {
+    code: "R2", status: "main", journal: "MISQ / Org Sci / Mgmt Sci", source: "memory",
+    rating: 8.8, feas: 3, diff: 4,
+    title: "Knowledge Drift / Knowledge Shock Paradox",
+    paradox: "知识库越勤更新，短期准确性可能提高，但一线流程和 agent 记忆被冲击，服务表现先好后坏。",
+    hypothesis: "Knowledge update intensity has an inverted-U effect: moderate updating improves AI answers and routing; excessive bursts or semantic drift increase waiting/unassign, human response share, reply time, or ai_issue probability.",
+    identification: "ku_history 73.2M rows confirmed; account 160583 has 56,669 knowledge events and QAM -> Cactus bridge. Build tenant-category-week/month panel and event-study around update bursts.",
+    anchor: "Organizational learning; exploration-exploitation; knowledge-based view; frontline routines",
+    experiment: "把知识事件按 tenant/category/time 聚合，构造 update intensity、burst、file_type/type、auto-learned proxy；观察同类 ticket 在前后窗口中的 AI share、agent share、reply time、status 和 ai_issue。",
+    example: "同一品牌类目一周内知识库大改，AI 理论上更准；但 agent 脚本、SOP 和旧答案同时失效，客户得到的实际体验可能更不稳定。",
+    architecture:
+`shulex_qam_prod.ku_history
+  -> tenant_id / project_id / ku_id / type / created_at
+shulex_qam_prod.learner
+  -> ticket_id
+cactus_prod.ticket_reports
+  -> ticket status / response / SLA outcomes`
+  },
+  {
+    code: "R3", status: "shortlisted", journal: "AER / AEJ: Applied / Mgmt Sci", source: "memory",
+    rating: 8.4, feas: 3, diff: 5,
+    title: "AI Adoption and SME Survival",
+    paradox: "AI 客服不是客服体验小工具，而是 SME 生产率技术；真正 DV 应该是 firm growth、cost、survival。",
+    hypothesis: "AI customer-service adoption causally improves tenant operational efficiency and survival, but adoption timing and peer spillovers create heterogeneous returns across SMEs.",
+    identification: "Proposal uses 280+ tenants, staggered DID plus onboarding encouragement/RCT. Needs subscription/payment join validation and internal approval for randomization.",
+    anchor: "Technology adoption; firm productivity; diffusion; Cai-style field RCT",
+    experiment: "Stage 1: tenant-month DID around AI enablement. Stage 2: randomize new tenants into standard onboarding, AI-first trial, and AI coaching/peer-nudge arms.",
+    example: "两个同类 Amazon sellers，一个被引导在 onboarding 启用 AI，一个自己慢慢试；比较 90-day conversion、ticket cost、upgrade、active-at-180d。",
+    architecture:
+`tenant adoption panel
+  -> AI enabled month
+  -> ticket operations
+  -> subscription / payment / survival
+  -> optional new-tenant RCT`
+  },
+  {
+    code: "R4", status: "shortlisted", journal: "Org Sci / MISQ / Mgmt Sci", source: "codex",
+    rating: 8.2, feas: 3, diff: 4,
+    title: "Human Residual Work Intensification",
+    paradox: "AI 减少人工量，但把高情绪、高复杂度残余工作集中给人工，人工总量下降而劳动强度上升。",
+    hypothesis: "AI automation filters routine cases, leaving human agents with emotionally intensive exceptions; exposure to AI-escalated residual work degrades later-shift performance.",
+    identification: "Conceptually strong; data exists in agent_performances, ticket_reports, response tables, handoff records. Weak point is agent identity / shift linkage across systems.",
+    anchor: "Emotional labor; job intensification; human-AI division of labor",
+    experiment: "Build agent-shift panel, score escalated tickets for emotional intensity and complexity, estimate whether cumulative residual-work load predicts later AHT/refusals/quality decline.",
+    example: "AI 处理退款状态查询，人工只剩骂人、事故、隐私、恶意投诉；人工 case 数少了，但后半班次拒绝率和 AHT 上升。",
+    architecture:
+`AI handled routine tickets
+  -> handoff exceptions
+  -> agent-shift exposure
+  -> later-shift AHT / refusal / quality`
+  },
+  {
+    code: "R5", status: "shortlisted", journal: "Mgmt Sci / POMS / JSR", source: "miro",
+    rating: 7.9, feas: 4, diff: 4,
+    title: "Escalation Complexity Paradox",
+    paradox: "升级分类越精细，内部路由可能越快，但客户体验和人工认知负荷可能变差。",
+    hypothesis: "Escalation taxonomy complexity has a nonlinear effect: moderate specificity improves routing; excessive option breadth increases bureaucracy, cognitive load, and recovery friction.",
+    identification: "MiroThinker D6. DB scan confirmed escalation_cases/topics/options -> ticket_reports join. Recent sample topic count variation weak; should redefine complexity as option breadth/taxonomy specificity.",
+    anchor: "Cognitive load; service process complexity; operations design",
+    experiment: "Use account/time taxonomy variation; build topic depth, option breadth, visible choices, specificity index; estimate resolution speed and ticket status outcomes.",
+    example: "同一投诉以前 2 个分类能路由，现在 12 个子选项看似精准，但 agent 花更多时间判断，客户感知为踢皮球。",
+    architecture:
+`escalation_cases
+  -> escalation_topics
+  -> escalation_topic_options
+  -> ticket_reports`
+  },
+  {
+    code: "R6", status: "shortlisted", journal: "Mgmt Sci / JM", source: "miro",
+    rating: 7.5, feas: 5, diff: 1,
+    title: "Follow-up Over-Signaling Paradox",
+    paradox: "自动 follow-up 低剂量是关心，高剂量变成 spam 信号。",
+    hypothesis: "Follow-up count and interval produce an inverted-U: 1-2 reminders may increase response, but high frequency or short intervals reduce reply and increase complaints/unsubscribe.",
+    identification: "MiroThinker top-1 under A/B constraints, but DB scan downgraded as main spine because satisfaction outcomes are sparse. multiple_follow_ups -> ticket_reports is clean.",
+    anchor: "Signal detection; Spence signaling; CRM contact strategy; reactance",
+    experiment: "Best as field A/B: randomize follow-up count and cadence within ethical bounds; historical dose-response as external-validity support.",
+    example: "第 1 条提醒像负责，第 4 条提醒像低成本机器人骚扰；同样是 follow-up，边际意义翻转。",
+    architecture:
+`multiple_follow_ups
+  -> ticket_id / send_time / status
+  -> ticket_reports
+  -> reply / status / process outcomes`
+  },
+  {
+    code: "R7", status: "candidate", journal: "JCR / JM", source: "miro",
+    rating: 7.3, feas: 5, diff: 1,
+    title: "Temporal Bundling Paradox",
+    paradox: "服务补偿不一定越快越好；延迟打包补偿有时更有关系信号价值。",
+    hypothesis: "Delayed or bundled compensation can increase perceived relational value versus immediate compensation when customers construe the delay as deliberate care rather than withholding.",
+    identification: "AI-Scientist / Miro ranked highest among clean consumer experiments. Strong A/B/lab feasibility, but less connected to Solvea database advantage.",
+    anchor: "Construal level theory; service recovery; compensation timing",
+    experiment: "Randomize compensation timing: immediate vs delayed/bundled, hold amount constant; measure perceived care, fairness, repurchase, complaint resolution.",
+    example: "AI 立刻发 10 元券像机器补偿；人工 3 天后结合 case 发专属补偿，可能被解读为认真处理。",
+    architecture:
+`service failure
+  -> compensation timing randomization
+  -> perceived care / fairness / repurchase`
+  },
+  {
+    code: "R8", status: "candidate", journal: "JCR / JM / MISQ", source: "miro",
+    rating: 7.1, feas: 5, diff: 1,
+    title: "Conversational Repair Paradox",
+    paradox: "可见的协调修复本应暴露系统不完美，却可能提高客户信任。",
+    hypothesis: "When AI-human handoff history is complex, visible repair/coordination talk increases trust by showing care and accountability.",
+    identification: "Miro ranked #2 among generated ideas. Clean manipulation possible, but must distinguish repair from generic apology/summary.",
+    anchor: "Conversation analysis; coordination work; trust repair",
+    experiment: "Randomize handoff script: invisible handoff vs visible repair summary vs apology-only; hold final resolution constant.",
+    example: "人工说『我看到了前面 AI 漏掉的两点，我先修正』可能比无缝接手更可信。",
+    architecture:
+`AI-human handoff
+  -> visible repair cue
+  -> trust / satisfaction / escalation`
+  },
+  {
+    code: "R9", status: "candidate", journal: "JM / JCR", source: "claude",
+    rating: 6.9, feas: 5, diff: 1,
+    title: "AI Humility Paradox",
+    paradox: "AI 承认不确定，可能比笃定回答更可信。",
+    hypothesis: "Moderate hedging signals honesty and calibrated expertise, reducing follow-up and handoff compared with overconfident answers.",
+    identification: "Easy live A/B, but academically smaller unless embedded into detection/recovery or trust-calibration theory.",
+    anchor: "Source credibility; uncertainty communication; trust calibration",
+    experiment: "Same answer, randomize confident wording vs calibrated uncertainty wording. Outcomes: trust, follow-up, handoff, helpful.",
+    example: "『我不 100% 确定，但大概率是 X，我可以帮你确认』可能比『答案就是 X』更可信。",
+    architecture:
+`same answer
+  -> confidence wording randomization
+  -> trust / follow-up / handoff`
+  },
+  {
+    code: "R10", status: "candidate", journal: "Marketing Science / JCR", source: "codex",
+    rating: 6.8, feas: 4, diff: 2,
+    title: "Compensation Attribution Paradox",
+    paradox: "同样金额的补偿，AI 自动派和人工特批的心理价值不同。",
+    hypothesis: "Human-attributed compensation is perceived as higher effort and relationally meaningful than AI-automated compensation, even when monetary value is identical.",
+    identification: "Clean framing A/B; useful companion study, not main DB-driven dissertation spine.",
+    anchor: "Attribution theory; mental accounting; service recovery effort",
+    experiment: "Randomize voucher source framing while holding amount, eligibility, and timing constant.",
+    example: "10 元券来自『系统自动』像流程；来自『人工为你申请』像照顾。",
+    architecture:
+`same voucher
+  -> AI-auto vs human-exception framing
+  -> perceived effort / satisfaction`
+  },
+  {
+    code: "R11", status: "future", journal: "Mgmt Sci / MISQ", source: "claude",
+    rating: 6.6, feas: 2, diff: 5,
+    title: "TARS Migration Natural Experiment",
+    paradox: "系统迁移可能同时改变 UI、流程、算法和人效，因果对象强但难拆。",
+    hypothesis: "Migrating tenants from cactus to tars changes service productivity and satisfaction through a bundled technology/process shock.",
+    identification: "Potential staggered DID, but current GPT -> Tars chat_id bridge failed in sampled rows; high engineering risk.",
+    anchor: "IS success; technology adoption; service operations",
+    experiment: "If bridge is solved, estimate event-study around tenant migration, with never/late migrated tenants as controls.",
+    example: "同一 tenant 迁移前后 resolution time 下降，但无法立刻判断是 AI、UI、SOP 还是 staffing。",
+    architecture:
+`tenant migration date
+  -> cactus pre / tars post
+  -> ticket outcomes`
+  },
+  {
+    code: "R12", status: "future", journal: "JCR / JM", source: "codex",
+    rating: 6.4, feas: 4, diff: 2,
+    title: "Frictionless Recovery Paradox",
+    paradox: "AI 秒处理投诉短期满意，但长期关系记忆可能更弱。",
+    hypothesis: "Too-frictionless recovery increases immediate satisfaction while reducing memorable relational repair and long-term retention.",
+    identification: "Interesting consumer theory, but long-term retention joins and mechanisms are weaker than top ideas.",
+    anchor: "Peak-end rule; service recovery paradox; memory and relationship repair",
+    experiment: "Compare instant automated resolution vs slightly effortful personalized recovery with matched final outcomes.",
+    example: "秒退货很爽，但没有被认真照顾的记忆；长期复购未必更高。",
+    architecture:
+`complaint
+  -> instant AI recovery vs personalized recovery
+  -> immediate CSAT / long-term retention`
+  },
+  {
+    code: "R13", status: "future", journal: "MISQ / Platform Economics", source: "codex",
+    rating: 6.2, feas: 2, diff: 5,
+    title: "Algorithmic Commoning Paradox",
+    paradox: "多租户模型让后来的租户搭便车，但也可能削弱早期租户差异化。",
+    hypothesis: "Cross-tenant learning creates platform commons spillovers that improve late adopters while eroding private returns for early adopters.",
+    identification: "Theoretical upside high, but requires clean model-learning exposure and tenant differentiation measures not yet validated.",
+    anchor: "Platform economics; knowledge spillovers; commons",
+    experiment: "Cohort comparison by adoption order, industry/language similarity, and shared knowledge/model updates.",
+    example: "早期卖家贡献大量客服数据，后来同类卖家免费享受更好的 AI；早期优势被平台公共化。",
+    architecture:
+`tenant cohort / industry similarity
+  -> shared model learning exposure
+  -> performance and differentiation outcomes`
+  },
+  {
+    code: "R14", status: "future", journal: "JCR / Org Sci", source: "codex",
+    rating: 6.0, feas: 4, diff: 2,
+    title: "Moral Distance Paradox",
+    paradox: "AI 先道歉再人工道歉，可能稀释人工道歉的道德信号。",
+    hypothesis: "Sequential AI-human apology can contaminate or dilute human apology sincerity compared with human-only apology.",
+    identification: "Clean micro experiment, but weaker database uniqueness and easy to be seen as apology-framing extension.",
+    anchor: "Moral distance; apology; sincerity signaling",
+    experiment: "Randomize AI-only, human-only, AI-to-human apology sequence with identical resolution.",
+    example: "客户先收到机器人道歉，再听人工道歉，可能觉得都是模板。",
+    architecture:
+`failure
+  -> apology sequence
+  -> sincerity / trust / satisfaction`
+  },
+  {
+    code: "R15", status: "future", journal: "MISQ / JM", source: "codex",
+    rating: 5.9, feas: 4, diff: 2,
+    title: "Faked Thinking Paradox",
+    paradox: "AI 秒回像敷衍，延迟几秒加思考提示可能显得更专业。",
+    hypothesis: "Artificial latency and thinking indicators increase perceived effort at the cost of speed, with an optimal latency window.",
+    identification: "Very easy A/B, but novelty and ethics risk are weaker; better as product optimization, not dissertation spine.",
+    anchor: "Effort heuristic; processing fluency/disfluency",
+    experiment: "Randomize 0s, 3s, 5s delay and thinking cue; measure perceived effort, trust, abandonment.",
+    example: "秒回像复制粘贴；等 3 秒像真的在查。",
+    architecture:
+`same answer
+  -> artificial delay / thinking indicator
+  -> perceived effort / abandonment`
+  }
+];
+
+// ────────────────────────────────────────────────────────────
+// RENDER
+// ────────────────────────────────────────────────────────────
+function bar(v) { return `<span class="prop-bar"><span class="prop-bar-fill v-${v}" style="width:${v*20}%"></span></span>`; }
+// A/B difficulty: invert color (5/5 difficulty = red)
+function diffBar(v) { return `<span class="prop-bar"><span class="prop-bar-fill v-${6-v}" style="width:${v*20}%"></span></span>`; }
+
+let VIEW_MODE = "rating"; // rating | status | source | feasibility | difficulty
+let SORT_DIR = { rating: "desc", feasibility: "desc", difficulty: "asc" }; // direction per sort key
+
+function setView(mode) {
+  // re-click active sort chip → flip direction
+  if (VIEW_MODE === mode && (mode === "rating" || mode === "feasibility" || mode === "difficulty")) {
+    SORT_DIR[mode] = SORT_DIR[mode] === "desc" ? "asc" : "desc";
+  } else {
+    VIEW_MODE = mode;
+  }
+  renderToolbar();
+  renderCards();
+}
+
+function renderToolbar() {
+  document.querySelectorAll(".toolbar .chip").forEach(el => {
+    const v = el.dataset.view;
+    const isActive = v === VIEW_MODE;
+    el.classList.toggle("is-active", isActive);
+    const arrow = el.querySelector(".chip-arrow");
+    if (!arrow) return;
+    if (isActive && (v === "rating" || v === "feasibility" || v === "difficulty")) {
+      arrow.style.display = "";
+      arrow.textContent = SORT_DIR[v] === "desc" ? "↓" : "↑";
+    } else {
+      arrow.style.display = "none";
+    }
+  });
+}
+
+function cardHTML(h) {
+  const rating = Number.isFinite(h.rating) ? h.rating.toFixed(1) : "—";
+  const evidence = h.evidence || h.identification || "";
+  return `
+    <div class="card" onclick="openPeek('${h.code}')" data-code="${h.code}">
+      <span class="source-badge ${h.source}"><span class="dot"></span>${h.source}</span>
+      <span class="pill ${h.status}">${h.status}</span>
+      <div class="card-meta">${h.code} · ${h.journal}</div>
+      <h3 class="card-title">${h.title}</h3>
+      <div class="rating-row"><span class="rating-score">${rating}</span><span class="rating-label">Academic value / 10</span></div>
+      <p class="card-quote">"${h.paradox}"</p>
+      <div class="card-props">
+        <div class="prop">
+          <span class="prop-label">Feasibility</span>${bar(h.feas)}<span class="prop-num">${h.feas}/5</span>
+        </div>
+        <div class="prop">
+          <span class="prop-label">A/B difficulty</span>${diffBar(h.diff)}<span class="prop-num">${h.diff}/5</span>
+        </div>
+        <div class="prop">
+          <span class="prop-label">Evidence</span><span style="color: var(--text-secondary); overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${evidence}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function groupHTML(label, count, cards) {
+  return `<div class="group"><div class="group-label">${label} · ${count}</div><div class="gallery">${cards.map(cardHTML).join("")}</div></div>`;
+}
+
+function renderCards() {
+  const body = document.getElementById("hypBody");
+  let html = "";
+
+  if (VIEW_MODE === "status") {
+    const order = ["main", "shortlisted", "candidate", "future"];
+    const labels = { main: "Main", shortlisted: "Shortlisted", candidate: "Candidate", future: "Future" };
+    const buckets = { main: [], shortlisted: [], candidate: [], future: [] };
+    HYPOTHESES.forEach(h => buckets[h.status]?.push(h));
+    for (const s of order) {
+      if (buckets[s].length) html += groupHTML(labels[s], buckets[s].length, buckets[s]);
+    }
+  }
+  else if (VIEW_MODE === "source") {
+    const buckets = { memory: [], miro: [], codex: [], claude: [] };
+    HYPOTHESES.forEach(h => buckets[h.source]?.push(h));
+    const labels = {
+      memory: "claude-mem + live DB validation",
+      miro: "MiroThinker / MiroMind ranking",
+      codex: "Codex independent rescan",
+      claude: "Claude Code previous proposals"
+    };
+    for (const s of ["memory", "miro", "codex", "claude"]) {
+      if (buckets[s].length) html += groupHTML(labels[s], buckets[s].length, buckets[s]);
+    }
+  }
+  else if (VIEW_MODE === "rating") {
+    const dir = SORT_DIR.rating === "desc" ? 1 : -1;
+    const sorted = [...HYPOTHESES].sort((a, b) => dir * ((b.rating || 0) - (a.rating || 0)) || b.feas - a.feas);
+    const label = SORT_DIR.rating === "desc" ? "high → low" : "low → high";
+    html = groupHTML(`Sorted by Academic Research Value (${label})`, sorted.length, sorted);
+  }
+  else if (VIEW_MODE === "feasibility") {
+    const dir = SORT_DIR.feasibility === "desc" ? 1 : -1;
+    const sorted = [...HYPOTHESES].sort((a, b) => dir * (b.feas - a.feas) || a.diff - b.diff);
+    const label = SORT_DIR.feasibility === "desc" ? "high → low" : "low → high";
+    html = groupHTML(`Sorted by Feasibility (${label})`, sorted.length, sorted);
+  }
+  else if (VIEW_MODE === "difficulty") {
+    const dir = SORT_DIR.difficulty === "asc" ? 1 : -1;
+    const sorted = [...HYPOTHESES].sort((a, b) => dir * (a.diff - b.diff) || b.feas - a.feas);
+    const label = SORT_DIR.difficulty === "asc" ? "easy → hard" : "hard → easy";
+    html = groupHTML(`Sorted by A/B difficulty (${label})`, sorted.length, sorted);
+  }
+
+  body.innerHTML = html;
+  document.getElementById("hypCountLabel").textContent = HYPOTHESES.length;
+  document.getElementById("hypTotalLabel").textContent = HYPOTHESES.length;
+}
+
+function renderDataSources() {
+  document.getElementById("dsList").innerHTML = DATA_SOURCES.map((d, i) => `
+    <div class="ds-card" data-idx="${i}">
+      <div class="ds-icon">${d.icon}</div>
+      <div><div class="ds-name">${d.name}</div><div class="ds-stats">${d.stats}</div></div>
+      <div class="ds-desc">${d.desc}</div>
+    </div>`).join("");
+  document.getElementById("dsCountLabel").textContent = DATA_SOURCES.length;
+}
+
+// ────────────────────────────────────────────────────────────
+// DATA SOURCE CONNECTORS
+// ────────────────────────────────────────────────────────────
+const DS_TYPES = [
+  { id: "mysql",    icon: "🐬", name: "MySQL / Postgres",  desc: "Connect via host + creds" },
+  { id: "file",     icon: "📁", name: "Upload file",       desc: "CSV · JSON · Parquet" },
+  { id: "s3",       icon: "🪣", name: "S3 / R2 bucket",    desc: "Read directly from object store" },
+  { id: "api",      icon: "🔌", name: "HTTP API",          desc: "REST endpoint + optional auth" },
+  { id: "gsheet",   icon: "📊", name: "Google Sheets",     desc: "OAuth a sheet" }
+];
+
+function openDsModal() {
+  document.getElementById("dsModalTitle").textContent = "Connect a data source";
+  document.getElementById("dsModalSub").textContent = "Pick a connector to bring data into your workspace.";
+  document.getElementById("dsModalBody").innerHTML = `
+    <div class="ds-type-grid">
+      ${DS_TYPES.map(t => `
+        <div class="ds-type" onclick="pickDsType('${t.id}')">
+          <div class="ds-type-icon">${t.icon}</div>
+          <div class="ds-type-name">${t.name}</div>
+          <div class="ds-type-desc">${t.desc}</div>
+        </div>`).join("")}
+    </div>`;
+  document.getElementById("dsModalOverlay").classList.add("is-open");
+}
+function closeDsModal() { document.getElementById("dsModalOverlay").classList.remove("is-open"); }
+
+function pickDsType(id) {
+  const t = DS_TYPES.find(x => x.id === id);
+  document.getElementById("dsModalTitle").innerHTML = `${t.icon} ${t.name}`;
+  document.getElementById("dsModalSub").textContent = t.desc;
+  let form = "";
+  if (id === "mysql") {
+    form = `
+      <div class="form-row"><label>Connection name</label><input id="ds_name" placeholder="e.g. acme_orders_prod"></div>
+      <div class="form-row-2">
+        <div class="form-row"><label>Host</label><input id="ds_host" placeholder="db.acme.com"></div>
+        <div class="form-row"><label>Port</label><input id="ds_port" placeholder="3306" value="3306"></div>
+      </div>
+      <div class="form-row"><label>Database</label><input id="ds_db" placeholder="orders_prod"></div>
+      <div class="form-row-2">
+        <div class="form-row"><label>User</label><input id="ds_user" placeholder="readonly"></div>
+        <div class="form-row"><label>Password</label><input id="ds_pw" type="password" placeholder="••••"></div>
+      </div>`;
+  } else if (id === "file") {
+    form = `
+      <div class="form-row"><label>Connection name</label><input id="ds_name" placeholder="e.g. sales_2024_csv"></div>
+      <div class="form-row">
+        <label>File</label>
+        <div class="file-drop">
+          <div style="font-size: 24px; margin-bottom: 6px;">📁</div>
+          <div>Drop CSV / JSON / Parquet here, or click to choose</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Up to 500 MB</div>
+        </div>
+      </div>`;
+  } else if (id === "s3") {
+    form = `
+      <div class="form-row"><label>Connection name</label><input id="ds_name" placeholder="e.g. analytics_lake"></div>
+      <div class="form-row"><label>Bucket</label><input id="ds_bucket" placeholder="acme-analytics"></div>
+      <div class="form-row-2">
+        <div class="form-row"><label>Region</label><input id="ds_region" placeholder="us-west-2"></div>
+        <div class="form-row"><label>Prefix (optional)</label><input id="ds_prefix" placeholder="events/2024/"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>Access Key ID</label><input id="ds_aki" placeholder="AKIA..."></div>
+        <div class="form-row"><label>Secret</label><input id="ds_sk" type="password" placeholder="••••"></div>
+      </div>`;
+  } else if (id === "api") {
+    form = `
+      <div class="form-row"><label>Connection name</label><input id="ds_name" placeholder="e.g. analytics_api"></div>
+      <div class="form-row"><label>Endpoint URL</label><input id="ds_url" placeholder="https://api.example.com/v1/events"></div>
+      <div class="form-row"><label>Bearer token (optional)</label><input id="ds_token" type="password" placeholder="Bearer ..."></div>`;
+  } else if (id === "gsheet") {
+    form = `
+      <div class="form-row"><label>Connection name</label><input id="ds_name" placeholder="e.g. survey_responses"></div>
+      <div class="form-row"><label>Sheet URL</label><input id="ds_url" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
+      <div class="form-row" style="color: var(--text-secondary); font-size: 13px;">Real product: clicks "Connect Google" → OAuth consent. Mock just adds the row.</div>`;
+  }
+  document.getElementById("dsModalBody").innerHTML = `
+    ${form}
+    <div class="form-foot">
+      <button class="btn-secondary" onclick="openDsModal()">← Back</button>
+      <button class="btn-primary" onclick="submitDs('${id}')">Add data source</button>
+    </div>`;
+}
+
+function submitDs(typeId) {
+  const t = DS_TYPES.find(x => x.id === typeId);
+  const name = (document.getElementById("ds_name")?.value || "").trim() || `new_${typeId}_${DATA_SOURCES.length + 1}`;
+  let stats = "", desc = t.desc;
+  if (typeId === "mysql") {
+    const h = document.getElementById("ds_host")?.value || "?";
+    const db = document.getElementById("ds_db")?.value || "?";
+    stats = `mysql · ${h} / ${db}`;
+    desc = "Connected · 0 tables scanned (mock)";
+  } else if (typeId === "file") {
+    stats = "file · pending upload";
+    desc = "CSV uploaded (mock)";
+  } else if (typeId === "s3") {
+    const b = document.getElementById("ds_bucket")?.value || "?";
+    stats = `s3 · ${b}`;
+    desc = "Object store connected (mock)";
+  } else if (typeId === "api") {
+    const u = document.getElementById("ds_url")?.value || "?";
+    stats = `api · ${u.slice(0, 40)}${u.length > 40 ? "…" : ""}`;
+    desc = "HTTP endpoint (mock)";
+  } else if (typeId === "gsheet") {
+    stats = "gsheet · oauth pending";
+    desc = "Google Sheet (mock)";
+  }
+  DATA_SOURCES.push({ icon: t.icon, name, stats, desc });
+  renderDataSources();
+  closeDsModal();
+  // flash the new row
+  setTimeout(() => {
+    const items = document.querySelectorAll(".ds-card");
+    const last = items[items.length - 1];
+    if (last) {
+      last.style.borderColor = "var(--bar-5)";
+      last.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => { last.style.borderColor = ""; }, 1800);
+    }
+  }, 50);
+}
+
+// ────────────────────────────────────────────────────────────
+// PAPERS
+// ────────────────────────────────────────────────────────────
+let PAPERS = [
+  {
+    status: "ready",
+    title: "The Impact of AI Disclosure on Customer Value in LLM-Powered Customer Service: Evidence from a Natural Experiment and Field Experiment",
+    code: "HKU DBA",
+    journal: "HKU · Doctor of Business Administration",
+    author: "Zhen GUO",
+    pages: 174,
+    words: "≈ 58,000",
+    date: "2026-03",
+    file: "/papers/thesis-hku-final-ai-disclosure.pdf"
+  },
+  {
+    status: "ready",
+    title: "The Handoff Agency Paradox",
+    code: "H3",
+    journal: "Management Science (working paper)",
+    author: "Zhen GUO",
+    pages: 13,
+    words: "≈ 9,800",
+    date: "2026-05-05",
+    file: "/papers/h3-handoff-agency-paradox.pdf"
+  }
+];
+
+const STATUS_LABEL = { ready: "Ready · PDF", draft: "Draft · PDF", generating: "Generating…" };
+
+function renderPapers() {
+  const list = document.getElementById("papersList");
+  list.innerHTML = PAPERS.map((p, i) => {
+    if (p.status === "generating") {
+      return `
+        <div class="paper-card" data-idx="${i}">
+          <div class="paper-thumb">⚙</div>
+          <div class="paper-info">
+            <span class="paper-status generating">Generating…</span>
+            <div class="paper-title">${p.title}</div>
+            <div class="paper-meta">based on ${p.code} · ${p.journal} · ETA ${p.eta || "12-30 min"}</div>
+            <div class="progress-row">
+              <div class="stage ${p.stage >= 1 ? "is-done" : ""} ${p.stage === 0 ? "is-active" : ""}"><span class="ind"></span>Ideation refresh + literature scan</div>
+              <div class="stage ${p.stage >= 2 ? "is-done" : ""} ${p.stage === 1 ? "is-active" : ""}"><span class="ind"></span>Experimental design + identification</div>
+              <div class="stage ${p.stage >= 3 ? "is-done" : ""} ${p.stage === 2 ? "is-active" : ""}"><span class="ind"></span>DeepCritique · reviewer-2 simulation</div>
+              <div class="stage ${p.stage >= 4 ? "is-done" : ""} ${p.stage === 3 ? "is-active" : ""}"><span class="ind"></span>LaTeX writeup · references</div>
+              <div class="stage ${p.stage >= 5 ? "is-done" : ""} ${p.stage === 4 ? "is-active" : ""}"><span class="ind"></span>PDF compile + diagrams</div>
+            </div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="paper-card" data-idx="${i}">
+        <div class="paper-thumb">📄</div>
+        <div class="paper-info">
+          <span class="paper-status ${p.status}">${STATUS_LABEL[p.status]}</span>
+          <div class="paper-title">${p.title}</div>
+          <div class="paper-meta">${p.code} · ${p.journal} · ${p.pages}p · ${p.words} words · ${p.date}</div>
+        </div>
+        <div class="paper-actions">
+          <a class="paper-btn" href="${p.file}" target="_blank">👁 Preview</a>
+          <a class="paper-btn primary" href="${p.file}" download>📥 Download</a>
+        </div>
+      </div>`;
+  }).join("");
+  document.getElementById("paperCountLabel").textContent = PAPERS.length;
+}
+
+function openPaperModal() {
+  const opts = HYPOTHESES.map(h => `<option value="${h.code}">${h.code} · ${h.title}</option>`).join("");
+  document.getElementById("paperModalBody").innerHTML = `
+    <div class="form-row">
+      <label>Hypothesis</label>
+      <select id="paper_hyp" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:14px; background: var(--bg-page); font-family: inherit;">
+        ${opts}
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Target journal style</label>
+      <select id="paper_journal" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:14px; background: var(--bg-page); font-family: inherit;">
+        <option>Management Science</option>
+        <option>Journal of Marketing</option>
+        <option>MISQ</option>
+        <option>JCR</option>
+        <option>Organization Science</option>
+        <option>Working paper (arXiv)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Depth</label>
+      <select id="paper_depth" style="width:100%; border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:14px; background: var(--bg-page); font-family: inherit;">
+        <option value="brief">Brief (3-5 pages, proposal style)</option>
+        <option value="chapter" selected>Chapter draft (15-30 pages)</option>
+        <option value="full">Full submission (40+ pages)</option>
+      </select>
+    </div>
+    <div class="form-foot">
+      <button class="btn-secondary" onclick="closePaperModal()">Cancel</button>
+      <button class="btn-primary" onclick="kickoffPaper()">Start writeup →</button>
+    </div>`;
+  document.getElementById("paperModalOverlay").classList.add("is-open");
+}
+function closePaperModal() { document.getElementById("paperModalOverlay").classList.remove("is-open"); }
+
+function kickoffPaper() {
+  const code = document.getElementById("paper_hyp").value;
+  const journal = document.getElementById("paper_journal").value;
+  const depth = document.getElementById("paper_depth").value;
+  const h = HYPOTHESES.find(x => x.code === code);
+  const newPaper = {
+    status: "generating", stage: 0,
+    title: h ? h.title : code,
+    code, journal,
+    pages: 0, words: "—", date: new Date().toISOString().slice(0,10),
+    file: "#",
+    eta: depth === "brief" ? "6-10 min" : depth === "full" ? "30-50 min" : "12-25 min"
+  };
+  PAPERS.unshift(newPaper);
+  renderPapers();
+  closePaperModal();
+  setTimeout(() => document.getElementById("papers")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+
+  // simulate stages
+  const stageEvery = 1100;
+  for (let s = 1; s <= 5; s++) {
+    setTimeout(() => {
+      newPaper.stage = s;
+      if (s === 5) {
+        newPaper.status = "draft";
+        newPaper.pages = 18 + Math.floor(Math.random() * 14);
+        newPaper.words = (newPaper.pages * 350).toLocaleString();
+        newPaper.file = "/papers/h3-handoff-agency-paradox.pdf"; // demo: reuse H3 PDF
+      }
+      renderPapers();
+    }, s * stageEvery);
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// PEEK
+// ────────────────────────────────────────────────────────────
+function openPeek(code) {
+  const h = HYPOTHESES.find(x => x.code === code);
+  if (!h) return;
+  window.__peekCode = code;
+  const rating = Number.isFinite(h.rating) ? h.rating.toFixed(1) : "—";
+  document.getElementById("peekContent").innerHTML = `
+    <div class="peek-meta-row">
+      <span class="pill ${h.status}">${h.status}</span>
+      <span class="source-badge ${h.source}" style="position: static;"><span class="dot"></span>${h.source}</span>
+      <span class="card-meta" style="margin:0;">Academic value ${rating}/10</span>
+    </div>
+    <div class="card-meta" style="margin-top: 10px;">${h.code} · ${h.journal}</div>
+    <h1>${h.title}</h1>
+
+    <h2>Paradox</h2>
+    <p class="quote">${h.paradox}</p>
+
+    <h2>Hypothesis</h2>
+    <p>${h.hypothesis}</p>
+
+    <h2>Experimental design (人话)</h2>
+    <p>${h.experiment}</p>
+
+    <h2>Worked example</h2>
+    <div class="example-block">${h.example}</div>
+
+    <h2>Architecture</h2>
+    <pre class="diagram">${h.architecture}</pre>
+
+    <h2>Identification</h2>
+    <p>${h.identification}</p>
+
+    <h2>Theory anchor</h2>
+    <p>${h.anchor}</p>
+  `;
+  document.getElementById("peekChatLog").innerHTML = "";
+  document.getElementById("peekChatInput").value = "";
+  document.getElementById("peekOverlay").classList.add("is-open");
+  document.getElementById("peekPanel").classList.add("is-open");
+}
+function closePeek() {
+  document.getElementById("peekOverlay").classList.remove("is-open");
+  document.getElementById("peekPanel").classList.remove("is-open");
+}
+
+// ────────────────────────────────────────────────────────────
+// REFINE VIA CHAT (mock)
+// ────────────────────────────────────────────────────────────
+function sendRefinement() {
+  const input = document.getElementById("peekChatInput");
+  const msg = input.value.trim();
+  if (!msg) return;
+  const log = document.getElementById("peekChatLog");
+  log.insertAdjacentHTML("beforeend", `<div class="msg user">› ${msg}</div>`);
+  input.value = "";
+  log.insertAdjacentHTML("beforeend", `<div class="msg assistant">↻ Refining…</div>`);
+  log.scrollTop = log.scrollHeight;
+  setTimeout(() => {
+    const last = log.querySelector(".msg.assistant:last-child");
+    last.innerHTML = `✓ Hypothesis updated. Outcome 改成 30-day churn；样本限制到订阅客户；增加 tenant FE 控制。卡片已同步。`;
+    // visually flash the open card
+    const h = HYPOTHESES.find(x => x.code === window.__peekCode);
+    if (h) {
+      const orig = h.experiment;
+      h.experiment = h.experiment + `\n\n[Refined per chat: ${msg}]`;
+      // re-render peek
+      openPeek(h.code);
+      h.experiment = orig; // keep mockup stable on close
+    }
+    log.scrollTop = log.scrollHeight;
+  }, 1200);
+}
+
+// ────────────────────────────────────────────────────────────
+// GENERATE NEW HYPOTHESIS (mock)
+// ────────────────────────────────────────────────────────────
+let SELECTED_MODEL = "claude";
+function pickModel(m) {
+  SELECTED_MODEL = m;
+  document.querySelectorAll(".model-opt").forEach(el =>
+    el.classList.toggle("is-selected", el.dataset.model === m));
+}
+function generateNew() {
+  const input = document.getElementById("genInput");
+  const prompt = input.value.trim();
+  if (!prompt) { input.focus(); return; }
+  const btn = document.getElementById("genBtn");
+  const status = document.getElementById("genStatus");
+  btn.disabled = true; btn.textContent = "Generating…";
+  status.textContent = `${SELECTED_MODEL === "claude" ? "Claude" : "Codex"} 正在生成中… ideation → critique → rank → write`;
+
+  setTimeout(() => {
+    const nextCode = "D" + (25 + HYPOTHESES.filter(h => h.code.startsWith("D") && parseInt(h.code.slice(1)) >= 25).length);
+    const newHyp = {
+      code: nextCode, status: "candidate", source: SELECTED_MODEL,
+      journal: SELECTED_MODEL === "claude" ? "MISQ" : "Marketing Science",
+      feas: 3 + Math.floor(Math.random() * 3),  // 3-5
+      diff: 1 + Math.floor(Math.random() * 4),  // 1-4
+      title: prompt.length > 40 ? prompt.slice(0, 40) + "…" : (prompt + " Paradox"),
+      paradox: `(自动生成自 prompt) ${prompt}`,
+      hypothesis: "auto-drafted, refine via chat in peek view.",
+      identification: "auto-suggested. open card to refine.",
+      anchor: "TBD",
+      experiment: "Click the card → use chat at bottom to flesh out.",
+      example: "TBD.",
+      architecture: "(generate after refinement in peek)"
+    };
+    HYPOTHESES.push(newHyp);
+    renderCards();
+    btn.disabled = false; btn.textContent = "Generate →";
+    status.innerHTML = `✓ ${nextCode} added (via ${SELECTED_MODEL}). <span class="preview-cta" onclick="openPeek('${nextCode}')">Open card →</span>`;
+    input.value = "";
+    // briefly highlight the new card
+    setTimeout(() => {
+      const card = document.querySelector(`[data-code="${nextCode}"]`);
+      if (card) {
+        card.classList.add("is-new");
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => card.classList.remove("is-new"), 2000);
+      }
+    }, 100);
+  }, 1600);
+}
+
+// ────────────────────────────────────────────────────────────
+// HELPERS
+// ────────────────────────────────────────────────────────────
+function toggleSection(el) { el.classList.toggle("is-collapsed"); }
+function scrollToSection(e, id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelectorAll(".sb-item.is-page").forEach(x => x.classList.remove("is-active"));
+  e.currentTarget.classList.add("is-active");
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePeek(); });
+
+// init
+renderToolbar();
+renderCards();
+renderDataSources();
+renderPapers();
+</script>
+</body>
+</html>

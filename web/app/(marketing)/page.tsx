@@ -2,9 +2,13 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { useLocale } from "@/lib/locale";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export default function LandingPage() {
   const { t } = useLocale();
@@ -46,6 +50,8 @@ export default function LandingPage() {
             <span key={p}>{p}</span>
           ))}
         </div>
+
+        <AdminQuickLogin />
       </section>
 
       <section className="bg-[#f8fafc] border-y border-[#e5e7eb] py-20">
@@ -86,6 +92,80 @@ export default function LandingPage() {
 
       <Footer />
     </main>
+  );
+}
+
+function AdminQuickLogin() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasToken, setHasToken] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHasToken(!!window.localStorage.getItem("arxify_token"));
+    }
+  }, []);
+
+  if (hasToken) return null;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/api/auth/admin-magic`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!r.ok) {
+        if (r.status === 401) throw new Error("Not an admin account · 该邮箱不是 admin");
+        throw new Error(`HTTP ${r.status}`);
+      }
+      const d = await r.json();
+      localStorage.setItem("arxify_token", d.token);
+      router.push("/dashboard");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="max-w-md mx-auto mt-12 border border-[#e5e7eb] rounded-xl bg-[#f8fafc] p-5 text-left">
+      <div className="font-mono text-xs uppercase tracking-widest text-[#1e40af] mb-2">
+        Admin · Quick Login
+      </div>
+      <p className="text-sm text-[#64748b] mb-4">
+        管理员邮箱直接进 dashboard，查看 17 个研究假设、8 个数据源、聊天记录。
+      </p>
+      <form onSubmit={submit} className="flex gap-2">
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="mguozhen@gmail.com"
+          className="flex-1 px-3 py-2 border border-[#e5e7eb] rounded-md focus:border-[#1e40af] focus:outline-none text-sm bg-white"
+        />
+        <button
+          type="submit"
+          disabled={loading || !email}
+          className="bg-[#0a0a0a] text-white px-5 py-2 rounded-md text-sm font-medium hover:bg-[#1e40af] transition disabled:opacity-40"
+        >
+          {loading ? "…" : "Enter →"}
+        </button>
+      </form>
+      {error && (
+        <div className="mt-3 text-xs text-red-700">{error}</div>
+      )}
+      <p className="text-xs text-[#94a3b8] mt-3">
+        Not admin? <Link href="/login" className="text-[#1e40af] underline">Use password login</Link>
+      </p>
+    </div>
   );
 }
 

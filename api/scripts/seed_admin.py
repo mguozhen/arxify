@@ -12,9 +12,11 @@ import json
 import secrets
 
 from api.utils.db import conn
+from api.utils.passwords import hash_password
 
 ADMIN_EMAIL = "mguozhen@gmail.com"
 ADMIN_NAME = "Hunter (郭振) · HKU DBA"
+ADMIN_PASSWORD = "solvea2026！"  # fullwidth ！ preserved
 
 WORKSPACE_TITLE = "HKU DBA Dissertation — LLM Customer Service"
 WORKSPACE_DESC = (
@@ -334,35 +336,40 @@ Don't hedge. Don't sycophant. If a direction looks weak, say so.
 
 def main():
     with conn() as c:
-        # 1. Admin / Hunter waitlist entry — promote to #1 + is_admin=1
+        # 1. Admin / Hunter waitlist entry — promote to #1 + is_admin=1 + password set
+        pwd_hash, pwd_salt = hash_password(ADMIN_PASSWORD)
         existing = c.execute(
             "SELECT id, token FROM waitlist WHERE email = ?", (ADMIN_EMAIL,)
         ).fetchone()
         if existing:
             token = existing["token"]
             c.execute(
-                "UPDATE waitlist SET is_admin=1, context=?, source=? WHERE id=?",
+                """UPDATE waitlist SET is_admin=1, context=?, source=?,
+                   password_hash=?, password_salt=? WHERE id=?""",
                 (
                     "Founder. HKU DBA. Built this thing.",
                     "founder",
+                    pwd_hash, pwd_salt,
                     existing["id"],
                 ),
             )
             user_id = existing["id"]
-            print(f"✓ admin already exists (id={user_id}), promoted to admin")
+            print(f"✓ admin already exists (id={user_id}), promoted + password set")
         else:
             token = secrets.token_urlsafe(16)
             cur = c.execute(
-                "INSERT INTO waitlist (email, context, source, token, is_admin) VALUES (?, ?, ?, ?, 1)",
+                """INSERT INTO waitlist (email, context, source, token, is_admin,
+                                          password_hash, password_salt)
+                   VALUES (?, ?, ?, ?, 1, ?, ?)""",
                 (
                     ADMIN_EMAIL,
                     "Founder. HKU DBA. Built this thing.",
                     "founder",
-                    token,
+                    token, pwd_hash, pwd_salt,
                 ),
             )
             user_id = cur.lastrowid
-            print(f"✓ admin created (id={user_id})")
+            print(f"✓ admin created (id={user_id}) with password")
 
         # 2. Workspace
         ws_existing = c.execute(

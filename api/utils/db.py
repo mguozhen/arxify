@@ -34,6 +34,8 @@ def init() -> None:
           token TEXT UNIQUE,
           referred_count INTEGER NOT NULL DEFAULT 0,
           is_admin INTEGER NOT NULL DEFAULT 0,
+          password_hash TEXT,
+          password_salt TEXT,
           created_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_waitlist_token ON waitlist(token);
