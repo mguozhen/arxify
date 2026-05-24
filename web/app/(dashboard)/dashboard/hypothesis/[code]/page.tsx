@@ -131,7 +131,31 @@ export default function HypothesisPage() {
     return <Loading text="Loading proposal…" />;
   }
   if (!detail) {
-    return <Loading text={error || "Not found"} error />;
+    const isNotFound = error?.includes("404") || error?.toLowerCase().includes("not found");
+    return (
+      <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117]">
+        <Header h={{ code, journal_target: "" } as Hypothesis} />
+        <section className="max-w-xl mx-auto px-8 py-24 text-center">
+          <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-3">
+            {isNotFound ? "404 · NOT FOUND" : "ERROR"}
+          </div>
+          <h1 className="text-3xl font-bold mb-4">
+            {isNotFound ? `Hypothesis ${code} doesn't exist` : "Couldn't load this hypothesis"}
+          </h1>
+          <p className="text-[#4b5263] mb-8 leading-relaxed">
+            {isNotFound
+              ? "Check the code in the URL, or pick from your dashboard."
+              : (error || "Unknown error")}
+          </p>
+          <Link
+            href="/dashboard?tab=hypotheses"
+            className="inline-block bg-[#0e1117] text-white px-6 py-3 rounded-full font-medium hover:bg-[#0a8060] transition"
+          >
+            ← Back to dashboard
+          </Link>
+        </section>
+      </main>
+    );
   }
 
   // If no proposal yet, show "generate" CTA
