@@ -15,10 +15,12 @@ from __future__ import annotations
 import secrets
 
 from api.utils.db import conn
+from api.utils.passwords import hash_password
 
 SOURCE_EMAIL = "mguozhen@gmail.com"
 NEW_EMAIL = "mguozhen03@gmail.com"
 NEW_NAME = "Hunter 03 · HKU DBA (shared)"
+NEW_PASSWORD = "admin"
 
 
 def main() -> None:
@@ -32,16 +34,21 @@ def main() -> None:
             raise SystemExit(f"No source workspace for {SOURCE_EMAIL}")
         src_id = src["id"]
 
-        # 2. ensure new admin user in waitlist
+        # 2. ensure new admin user in waitlist (with password = NEW_PASSWORD)
+        pw_hash, pw_salt = hash_password(NEW_PASSWORD)
         u = c.execute("SELECT id, token FROM waitlist WHERE email = ?", (NEW_EMAIL,)).fetchone()
         if u:
             token = u["token"]
-            c.execute("UPDATE waitlist SET is_admin = 1 WHERE email = ?", (NEW_EMAIL,))
+            c.execute(
+                "UPDATE waitlist SET is_admin = 1, password_hash = ?, password_salt = ? WHERE email = ?",
+                (pw_hash, pw_salt, NEW_EMAIL),
+            )
         else:
             token = secrets.token_urlsafe(16)
             c.execute(
-                "INSERT INTO waitlist (email, context, source, token, is_admin) VALUES (?,?,?,?,1)",
-                (NEW_EMAIL, NEW_NAME, "seed_second_admin", token),
+                "INSERT INTO waitlist (email, context, source, token, is_admin, password_hash, password_salt) "
+                "VALUES (?,?,?,?,1,?,?)",
+                (NEW_EMAIL, NEW_NAME, "seed_second_admin", token, pw_hash, pw_salt),
             )
 
         # 3. ensure destination workspace owned by new email
