@@ -17,3 +17,4 @@ db/migrations/meta/_journal.json
 dist/
 build/
 .turbo/
+.gstack/

@@ -19,7 +19,13 @@ from api.routes import auth, billing, projects, runs, artifacts, health, demo, w
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Future: warm Redis pool, register cron jobs, etc.
+    # Idempotent: ensure the shared second-admin account exists on every boot
+    # so the dissertation hypotheses are reachable by mguozhen03@gmail.com too.
+    try:
+        from api.scripts.seed_second_admin import main as seed_second_admin
+        seed_second_admin()
+    except Exception as e:  # never let seeding crash the API
+        print(f"[startup] seed_second_admin skipped: {e}")
     yield
 
 
@@ -38,6 +44,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://arxify.io",
         "https://arxify.ai",
+        "https://paer.paircode.ai",
     ],
     allow_credentials=True,
     allow_methods=["*"],
