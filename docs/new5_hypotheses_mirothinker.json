@@ -1,0 +1,67 @@
+[
+  {
+    "code": "D25",
+    "title": "Algorithmic Strictness Paradox",
+    "paradox": "LLM 质检越“严”（同一规则下拦截率从 15% 提到 35%），整体体验分却先升后降，高严审区段客诉率上升约 20%。",
+    "hypothesis": "Increasing the strictness of algorithmic QA thresholds initially improves average service quality scores but, beyond a tipping point, triggers more visible micro-frictions (extra verifications, repeated clarifications) that decrease customer satisfaction and agent morale, leading to a net decline in NPS and resolution quality.",
+    "identification": "Quasi-experiment using staggered rollout of stricter AI QA rules across tenants and time. Difference-in-differences on ticket table (resolution, AHT, repeat-contact), AI inspection table (rule hits, severity), QA table (pass/fail, overrides), and NPS/CSAT by cohort. Sample: tenants that adopt new QA-policy templates vs matched controls over 6–9 months.",
+    "theory_anchor": "Biske & Kahn 2013, MISQ; Burton et al. 2020, Org Sci (algorithmic control and over-monitoring)",
+    "journal_target": "MISQ / Management Science",
+    "feasibility_6mo": 4,
+    "ab_test_difficulty": 3,
+    "status": "candidate",
+    "notes": "依托既有 AI 质检规则和多租户渐进上线策略，容易拿到清晰 DiD 估计。"
+  },
+  {
+    "code": "D26",
+    "title": "Supervised Autonomy Paradox",
+    "paradox": "对 LLM 客服设置“需人工二审”的监督阈值越低（人工复核比例从 10% 提升到 40%），客户表面满意度略升但长期自助使用率下降约 15%。",
+    "hypothesis": "When algorithmic decisions are routinely subjected to human double-checking at low thresholds, customers and agents start to perceive the AI as less competent and less legitimate, which slightly boosts short-term perceived safety but reduces long-term AI usage, self-service reliance, and trust in automated recommendations.",
+    "identification": "Policy shock design: compare tenants before/after introducing or tightening mandatory human review on AI decisions (e.g., refunds, plan changes). Use tickets (decision type, monetary size), handoff events (review flags), AI inspection & QA overrides, and customer return behavior (next-period AI usage). Panel DiD with tenant and time fixed effects.",
+    "theory_anchor": "Jussupow et al. 2020, MISQ; Logg et al. 2019, Mgmt Sci (algorithm aversion and human–algorithm complementarity)",
+    "journal_target": "Management Science / Organization Science",
+    "feasibility_6mo": 4,
+    "ab_test_difficulty": 4,
+    "status": "candidate",
+    "notes": "利用已有“需人工复核”的风控/补偿策略差异，做制度变更前后对比。"
+  },
+  {
+    "code": "D27",
+    "title": "Algorithmic Fairness Visibility Paradox",
+    "paradox": "向客户透明展示“本次由 AI 决定且通过公平审计”标签，短期满意度提升约 0.3–0.5 分，但被拒绝方长期流失率反而比未展示标签高出约 10%。",
+    "hypothesis": "Making algorithmic supervision and fairness auditing more visible to customers increases perceived procedural justice when decisions are favorable, but for negatively affected customers, explicit ‘AI + audit’ labels backfire by making denial feel more rigid and unappealable, raising long-term churn and complaint intensity.",
+    "identification": "Field A/B at message-template level: treatment shows a fairness/oversight badge (e.g., “Reviewed by AI and audited for fairness”), control does not. Use ticket outcomes (approved/denied), subsequent tickets, complaints, churn proxies, and survey-based justice measures for a subsample. Heterogeneous treatment effects by decision valence.",
+    "theory_anchor": "Colquitt 2001, J Appl Psych; Greenleaf & Lehmann 1995, JMR (procedural justice and fairness in marketing)",
+    "journal_target": "JM / JCR / Marketing Science",
+    "feasibility_6mo": 3,
+    "ab_test_difficulty": 2,
+    "status": "candidate",
+    "notes": "只需在通知文案中增加或删除“由 AI+审计决定”的提示，实施成本低。"
+  },
+  {
+    "code": "D28",
+    "title": "Supervisory Noise Paradox",
+    "paradox": "当 AI 质检每天向人工推送的“可疑工单”量从均值 30 单增加到 80 单时，单条预警的处理质量评分反而下降约 25%。",
+    "hypothesis": "As the volume of AI-generated supervisory alerts increases, human supervisors experience alert fatigue and selective ignoring, leading to lower attention per flagged ticket, weaker corrective actions, and ultimately worse quality outcomes on algorithmically flagged cases compared to a lean-alert regime.",
+    "identification": "Exploit variations in AI alert thresholds and model versions across tenants/time. Use AI inspection log (alerts count, type, confidence), QA table (post-correction scores), and ticket outcomes (NPS, re-open, escalation). Instrument alert volume with exogenous model updates or centrally adjusted sensitivity parameters to address reverse causality.",
+    "theory_anchor": "van der Aalst 2016, MISQ; Fiske & Taylor 1991, cognitive load theory (information overload and alert fatigue)",
+    "journal_target": "MISQ / Organization Science",
+    "feasibility_6mo": 3,
+    "ab_test_difficulty": 4,
+    "status": "candidate",
+    "notes": "需配合一次模型/阈值升级，靠日志即可估计监督噪音效应。"
+  },
+  {
+    "code": "D29",
+    "title": "Algorithmic Coaching Paradox",
+    "paradox": "引入“AI 话术建议+质检反馈”后，新手坐席前两周 QA 通过率提升约 12%，但第 6–8 周独立处理复杂工单的成功率却低于未使用 AI 辅导组约 8%。",
+    "hypothesis": "Providing intensive algorithmic coaching (real-time reply suggestions plus QA-based micro feedback) accelerates early-stage performance for novice agents but crowds out deeper learning and problem-solving skills, resulting in lower medium-term independent performance on complex, low-template-fit tickets.",
+    "identification": "Cohort-based natural experiment: some onboarding batches receive AI coaching tools from day 1, others start later or not at all. Link agent–ticket panel with AI suggestion logs (accept/override), QA scores, and complexity scores from AI inspection. Estimate learning curves and interaction between AI usage intensity and complexity over the first 2–3 months.",
+    "theory_anchor": "Benner & Tushman 2003, AMR; Haans et al. 2016, Org Sci (learning curves, exploitation vs exploration)",
+    "journal_target": "Organization Science / Management Science",
+    "feasibility_6mo": 3,
+    "ab_test_difficulty": 3,
+    "status": "candidate",
+    "notes": "只要有新员工分批入职且 AI 辅导启用时间不同，就能做学习曲线对比。"
+  }
+]
