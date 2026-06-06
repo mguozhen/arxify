@@ -352,7 +352,7 @@ async def _call_claude_chat(system_prompt: str, history: list[dict], max_tokens:
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-sonnet-4-5-20250929",
+                "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
                 "max_tokens": max_tokens,
                 "system": system_prompt,
                 "messages": history,
