@@ -3,6 +3,9 @@
 
 export type Locale = "zh" | "en" | "ja" | "es";
 export const LOCALES: Locale[] = ["zh", "en", "ja", "es"];
+// Locales actually exposed in the UI switcher. ja/es dicts are kept for the
+// marketing pages but the dashboard only offers 中/EN.
+export const EXPOSED_LOCALES: Locale[] = ["zh", "en"];
 export const LOCALE_LABELS: Record<Locale, string> = {
   zh: "中文",
   en: "English",
@@ -111,6 +114,90 @@ type Dict = {
   ppt_generating: string;
   ppt_nav_hint: string;
 
+  // dashboard chrome
+  dash_tab_advisor: string;
+  dash_chat_thinking: string;
+  dash_chat_advisor_label: string;
+  dash_more: string;
+  dash_less: string;
+  dash_view_ppt: string;
+  dash_expand_ppt: string;
+  dash_row_hypothesis: string;
+  dash_row_identification: string;
+  dash_row_theory: string;
+  dash_row_notes: string;
+  dash_feas: string;
+  dash_ab: string;
+  dash_in_line_a: string;
+  dash_in_line_b: string;
+  // queue / waitlist
+  queue_launch_progress: string;
+  queue_more_to_launch: string;
+  queue_hit_target: string;
+  queue_signup_info: string;
+  queue_position: string;
+  queue_email: string;
+  queue_joined: string;
+  queue_source: string;
+  queue_refer: string;
+  queue_referred: string;
+  queue_copy: string;
+  queue_copied: string;
+  // no-token page
+  notoken_title_a: string;
+  notoken_title_em: string;
+  notoken_desc: string;
+  notoken_login: string;
+  notoken_join: string;
+  // hypothesis detail page chrome
+  ppt_404: string;
+  ppt_not_exist: string;
+  ppt_load_fail: string;
+  ppt_back_dash: string;
+  ppt_loading_proposal: string;
+  ppt_prev: string;
+  ppt_next: string;
+  ppt_slide_question: string;
+  ppt_h_why_top: string;
+  ppt_h_why_solvea: string;
+  ppt_design: string;
+  ppt_outcomes: string;
+  ppt_h_outcomes: string;
+  ppt_primary: string;
+  ppt_secondary: string;
+  ppt_mediators: string;
+  ppt_rand_unit: string;
+  ppt_duration: string;
+  ppt_logic: string;
+  ppt_treatment_arms: string;
+  ppt_identification: string;
+  ppt_pre_registered: string;
+  ppt_hypotheses: string;
+  ppt_sample_power: string;
+  ppt_h_sample: string;
+  ppt_per_arm: string;
+  ppt_total_n: string;
+  ppt_power: string;
+  ppt_mde: string;
+  ppt_weeks_collect: string;
+  ppt_implementation: string;
+  ppt_h_impl: string;
+  ppt_engineering: string;
+  ppt_compute_cost: string;
+  ppt_ops_needed: string;
+  ppt_ops_steps: string;
+  ppt_dependencies: string;
+  ppt_journals: string;
+  ppt_h_journals: string;
+  ppt_theory_anchors: string;
+  ppt_h_theory: string;
+  ppt_risks: string;
+  ppt_h_risks: string;
+  ppt_mitigation: string;
+  ppt_pitches: string;
+  ppt_h_pitches: string;
+  ppt_weeks_unit: string;
+
   // common
   loading: string;
 };
@@ -213,6 +300,86 @@ const zh: Dict = {
   ppt_generating: "生成提案中 (~30 秒)…",
   ppt_nav_hint: "← → 空格切换 · Esc 退出 · 0-9 跳转",
 
+  dash_tab_advisor: "💬 AI 导师",
+  dash_chat_thinking: "思考中…",
+  dash_chat_advisor_label: "ai 导师 · claude",
+  dash_more: "+ 展开",
+  dash_less: "− 收起",
+  dash_view_ppt: "查看 PPT →",
+  dash_expand_ppt: "扩展为 PPT →",
+  dash_row_hypothesis: "假设",
+  dash_row_identification: "识别策略",
+  dash_row_theory: "理论锚点",
+  dash_row_notes: "备注",
+  dash_feas: "可行性",
+  dash_ab: "A/B",
+  dash_in_line_a: "你排在第 ",
+  dash_in_line_b: " 位。",
+  queue_launch_progress: "上线进度",
+  queue_more_to_launch: "还差 {n} 个就上线。",
+  queue_hit_target: "🎉 已达目标。本周开放 Beta。",
+  queue_signup_info: "你的注册信息",
+  queue_position: "排位",
+  queue_email: "邮箱",
+  queue_joined: "加入时间",
+  queue_source: "来源",
+  queue_refer: "邀请好友",
+  queue_referred: "已邀请：",
+  queue_copy: "复制",
+  queue_copied: "已复制！",
+  notoken_title_a: "你还没",
+  notoken_title_em: "加入",
+  notoken_desc: "可能你还没加入，或者换了设备。",
+  notoken_login: "登录",
+  notoken_join: "加入等待名单 →",
+  ppt_404: "404 · 未找到",
+  ppt_not_exist: "假设 {code} 不存在",
+  ppt_load_fail: "无法加载这个假设",
+  ppt_back_dash: "← 返回工作台",
+  ppt_loading_proposal: "加载提案中…",
+  ppt_prev: "← 上一页",
+  ppt_next: "下一页 →",
+  ppt_slide_question: "一句话问题",
+  ppt_h_why_top: "为什么能上顶刊",
+  ppt_h_why_solvea: "为什么只有 Solvea 能回答",
+  ppt_design: "实验设计",
+  ppt_outcomes: "结果变量",
+  ppt_h_outcomes: "我们测量什么",
+  ppt_primary: "主要",
+  ppt_secondary: "次要",
+  ppt_mediators: "中介变量",
+  ppt_rand_unit: "随机化单位",
+  ppt_duration: "周期",
+  ppt_logic: "逻辑",
+  ppt_treatment_arms: "处理组",
+  ppt_identification: "识别策略",
+  ppt_pre_registered: "预注册",
+  ppt_hypotheses: "假设",
+  ppt_sample_power: "样本与功效",
+  ppt_h_sample: "多大？多久？",
+  ppt_per_arm: "每组",
+  ppt_total_n: "总样本 N",
+  ppt_power: "功效",
+  ppt_mde: "最小可检测效应",
+  ppt_weeks_collect: "采集周数",
+  ppt_implementation: "实施",
+  ppt_h_impl: "成本与时间线",
+  ppt_engineering: "工程",
+  ppt_compute_cost: "算力成本",
+  ppt_ops_needed: "所需运营",
+  ppt_ops_steps: "运营步骤",
+  ppt_dependencies: "依赖项",
+  ppt_journals: "目标期刊",
+  ppt_h_journals: "投向哪里",
+  ppt_theory_anchors: "理论锚点",
+  ppt_h_theory: "文献框架",
+  ppt_risks: "风险",
+  ppt_h_risks: "什么会让它失败",
+  ppt_mitigation: "缓解：",
+  ppt_pitches: "电梯演讲",
+  ppt_h_pitches: "三位导师的 30 秒 pitch",
+  ppt_weeks_unit: " 周",
+
   loading: "加载中…",
 };
 
@@ -313,6 +480,86 @@ const en: Dict = {
   ppt_generate: "Generate full proposal →",
   ppt_generating: "Generating (~30s)…",
   ppt_nav_hint: "← → space to navigate · Esc to exit · 0-9 to jump",
+
+  dash_tab_advisor: "💬 AI Advisor",
+  dash_chat_thinking: "thinking…",
+  dash_chat_advisor_label: "ai advisor · claude",
+  dash_more: "+ more",
+  dash_less: "− less",
+  dash_view_ppt: "view ppt →",
+  dash_expand_ppt: "expand to ppt →",
+  dash_row_hypothesis: "Hypothesis",
+  dash_row_identification: "Identification",
+  dash_row_theory: "Theory anchor",
+  dash_row_notes: "Notes",
+  dash_feas: "FEAS",
+  dash_ab: "A/B",
+  dash_in_line_a: "You're #",
+  dash_in_line_b: " in line.",
+  queue_launch_progress: "Launch progress",
+  queue_more_to_launch: "{n} more to launch.",
+  queue_hit_target: "🎉 We hit target. Beta opening this week.",
+  queue_signup_info: "Your signup info",
+  queue_position: "Position",
+  queue_email: "Email",
+  queue_joined: "Joined",
+  queue_source: "Source",
+  queue_refer: "Refer friends",
+  queue_referred: "Referred: ",
+  queue_copy: "Copy",
+  queue_copied: "Copied!",
+  notoken_title_a: "You're not ",
+  notoken_title_em: "in",
+  notoken_desc: "Either you haven't joined yet, or you're on a different device.",
+  notoken_login: "Log in",
+  notoken_join: "Join waitlist →",
+  ppt_404: "404 · NOT FOUND",
+  ppt_not_exist: "Hypothesis {code} doesn't exist",
+  ppt_load_fail: "Couldn't load this hypothesis",
+  ppt_back_dash: "← Back to dashboard",
+  ppt_loading_proposal: "Loading proposal…",
+  ppt_prev: "← Prev",
+  ppt_next: "Next →",
+  ppt_slide_question: "ONE-LINE QUESTION",
+  ppt_h_why_top: "Why this lands at top-tier journals",
+  ppt_h_why_solvea: "Why only Solvea can answer this",
+  ppt_design: "EXPERIMENT DESIGN",
+  ppt_outcomes: "Outcome Variables",
+  ppt_h_outcomes: "What we measure",
+  ppt_primary: "Primary",
+  ppt_secondary: "Secondary",
+  ppt_mediators: "Mediators",
+  ppt_rand_unit: "Randomization unit",
+  ppt_duration: "Duration",
+  ppt_logic: "Logic",
+  ppt_treatment_arms: "Treatment arms",
+  ppt_identification: "Identification",
+  ppt_pre_registered: "PRE-REGISTERED",
+  ppt_hypotheses: "Hypotheses",
+  ppt_sample_power: "Sample Size & Power",
+  ppt_h_sample: "How big? How long?",
+  ppt_per_arm: "Per arm",
+  ppt_total_n: "Total N",
+  ppt_power: "Power",
+  ppt_mde: "MDE",
+  ppt_weeks_collect: "Weeks to collect",
+  ppt_implementation: "IMPLEMENTATION",
+  ppt_h_impl: "Cost & timeline",
+  ppt_engineering: "Engineering",
+  ppt_compute_cost: "Compute cost",
+  ppt_ops_needed: "Ops needed",
+  ppt_ops_steps: "Ops Steps",
+  ppt_dependencies: "Dependencies",
+  ppt_journals: "JOURNAL TARGETS",
+  ppt_h_journals: "Where this lands",
+  ppt_theory_anchors: "THEORY ANCHORS",
+  ppt_h_theory: "Literature framework",
+  ppt_risks: "RISKS",
+  ppt_h_risks: "What could kill this",
+  ppt_mitigation: "Mitigation: ",
+  ppt_pitches: "ELEVATOR PITCHES",
+  ppt_h_pitches: "30-second pitch for each advisor",
+  ppt_weeks_unit: " weeks",
 
   loading: "Loading…",
 };
@@ -415,6 +662,86 @@ const ja: Dict = {
   ppt_generating: "生成中 (~30 秒)…",
   ppt_nav_hint: "← → スペースで移動 · Esc で終了 · 0-9 でジャンプ",
 
+  dash_tab_advisor: "💬 AI Advisor",
+  dash_chat_thinking: "thinking…",
+  dash_chat_advisor_label: "ai advisor · claude",
+  dash_more: "+ more",
+  dash_less: "− less",
+  dash_view_ppt: "view ppt →",
+  dash_expand_ppt: "expand to ppt →",
+  dash_row_hypothesis: "Hypothesis",
+  dash_row_identification: "Identification",
+  dash_row_theory: "Theory anchor",
+  dash_row_notes: "Notes",
+  dash_feas: "FEAS",
+  dash_ab: "A/B",
+  dash_in_line_a: "You're #",
+  dash_in_line_b: " in line.",
+  queue_launch_progress: "Launch progress",
+  queue_more_to_launch: "{n} more to launch.",
+  queue_hit_target: "🎉 We hit target. Beta opening this week.",
+  queue_signup_info: "Your signup info",
+  queue_position: "Position",
+  queue_email: "Email",
+  queue_joined: "Joined",
+  queue_source: "Source",
+  queue_refer: "Refer friends",
+  queue_referred: "Referred: ",
+  queue_copy: "Copy",
+  queue_copied: "Copied!",
+  notoken_title_a: "You're not ",
+  notoken_title_em: "in",
+  notoken_desc: "Either you haven't joined yet, or you're on a different device.",
+  notoken_login: "Log in",
+  notoken_join: "Join waitlist →",
+  ppt_404: "404 · NOT FOUND",
+  ppt_not_exist: "Hypothesis {code} doesn't exist",
+  ppt_load_fail: "Couldn't load this hypothesis",
+  ppt_back_dash: "← Back to dashboard",
+  ppt_loading_proposal: "Loading proposal…",
+  ppt_prev: "← Prev",
+  ppt_next: "Next →",
+  ppt_slide_question: "ONE-LINE QUESTION",
+  ppt_h_why_top: "Why this lands at top-tier journals",
+  ppt_h_why_solvea: "Why only Solvea can answer this",
+  ppt_design: "EXPERIMENT DESIGN",
+  ppt_outcomes: "Outcome Variables",
+  ppt_h_outcomes: "What we measure",
+  ppt_primary: "Primary",
+  ppt_secondary: "Secondary",
+  ppt_mediators: "Mediators",
+  ppt_rand_unit: "Randomization unit",
+  ppt_duration: "Duration",
+  ppt_logic: "Logic",
+  ppt_treatment_arms: "Treatment arms",
+  ppt_identification: "Identification",
+  ppt_pre_registered: "PRE-REGISTERED",
+  ppt_hypotheses: "Hypotheses",
+  ppt_sample_power: "Sample Size & Power",
+  ppt_h_sample: "How big? How long?",
+  ppt_per_arm: "Per arm",
+  ppt_total_n: "Total N",
+  ppt_power: "Power",
+  ppt_mde: "MDE",
+  ppt_weeks_collect: "Weeks to collect",
+  ppt_implementation: "IMPLEMENTATION",
+  ppt_h_impl: "Cost & timeline",
+  ppt_engineering: "Engineering",
+  ppt_compute_cost: "Compute cost",
+  ppt_ops_needed: "Ops needed",
+  ppt_ops_steps: "Ops Steps",
+  ppt_dependencies: "Dependencies",
+  ppt_journals: "JOURNAL TARGETS",
+  ppt_h_journals: "Where this lands",
+  ppt_theory_anchors: "THEORY ANCHORS",
+  ppt_h_theory: "Literature framework",
+  ppt_risks: "RISKS",
+  ppt_h_risks: "What could kill this",
+  ppt_mitigation: "Mitigation: ",
+  ppt_pitches: "ELEVATOR PITCHES",
+  ppt_h_pitches: "30-second pitch for each advisor",
+  ppt_weeks_unit: " weeks",
+
   loading: "読み込み中…",
 };
 
@@ -516,6 +843,86 @@ const es: Dict = {
   ppt_generating: "Generando (~30s)…",
   ppt_nav_hint: "← → espacio para navegar · Esc para salir · 0-9 para saltar",
 
+  dash_tab_advisor: "💬 AI Advisor",
+  dash_chat_thinking: "thinking…",
+  dash_chat_advisor_label: "ai advisor · claude",
+  dash_more: "+ more",
+  dash_less: "− less",
+  dash_view_ppt: "view ppt →",
+  dash_expand_ppt: "expand to ppt →",
+  dash_row_hypothesis: "Hypothesis",
+  dash_row_identification: "Identification",
+  dash_row_theory: "Theory anchor",
+  dash_row_notes: "Notes",
+  dash_feas: "FEAS",
+  dash_ab: "A/B",
+  dash_in_line_a: "You're #",
+  dash_in_line_b: " in line.",
+  queue_launch_progress: "Launch progress",
+  queue_more_to_launch: "{n} more to launch.",
+  queue_hit_target: "🎉 We hit target. Beta opening this week.",
+  queue_signup_info: "Your signup info",
+  queue_position: "Position",
+  queue_email: "Email",
+  queue_joined: "Joined",
+  queue_source: "Source",
+  queue_refer: "Refer friends",
+  queue_referred: "Referred: ",
+  queue_copy: "Copy",
+  queue_copied: "Copied!",
+  notoken_title_a: "You're not ",
+  notoken_title_em: "in",
+  notoken_desc: "Either you haven't joined yet, or you're on a different device.",
+  notoken_login: "Log in",
+  notoken_join: "Join waitlist →",
+  ppt_404: "404 · NOT FOUND",
+  ppt_not_exist: "Hypothesis {code} doesn't exist",
+  ppt_load_fail: "Couldn't load this hypothesis",
+  ppt_back_dash: "← Back to dashboard",
+  ppt_loading_proposal: "Loading proposal…",
+  ppt_prev: "← Prev",
+  ppt_next: "Next →",
+  ppt_slide_question: "ONE-LINE QUESTION",
+  ppt_h_why_top: "Why this lands at top-tier journals",
+  ppt_h_why_solvea: "Why only Solvea can answer this",
+  ppt_design: "EXPERIMENT DESIGN",
+  ppt_outcomes: "Outcome Variables",
+  ppt_h_outcomes: "What we measure",
+  ppt_primary: "Primary",
+  ppt_secondary: "Secondary",
+  ppt_mediators: "Mediators",
+  ppt_rand_unit: "Randomization unit",
+  ppt_duration: "Duration",
+  ppt_logic: "Logic",
+  ppt_treatment_arms: "Treatment arms",
+  ppt_identification: "Identification",
+  ppt_pre_registered: "PRE-REGISTERED",
+  ppt_hypotheses: "Hypotheses",
+  ppt_sample_power: "Sample Size & Power",
+  ppt_h_sample: "How big? How long?",
+  ppt_per_arm: "Per arm",
+  ppt_total_n: "Total N",
+  ppt_power: "Power",
+  ppt_mde: "MDE",
+  ppt_weeks_collect: "Weeks to collect",
+  ppt_implementation: "IMPLEMENTATION",
+  ppt_h_impl: "Cost & timeline",
+  ppt_engineering: "Engineering",
+  ppt_compute_cost: "Compute cost",
+  ppt_ops_needed: "Ops needed",
+  ppt_ops_steps: "Ops Steps",
+  ppt_dependencies: "Dependencies",
+  ppt_journals: "JOURNAL TARGETS",
+  ppt_h_journals: "Where this lands",
+  ppt_theory_anchors: "THEORY ANCHORS",
+  ppt_h_theory: "Literature framework",
+  ppt_risks: "RISKS",
+  ppt_h_risks: "What could kill this",
+  ppt_mitigation: "Mitigation: ",
+  ppt_pitches: "ELEVATOR PITCHES",
+  ppt_h_pitches: "30-second pitch for each advisor",
+  ppt_weeks_unit: " weeks",
+
   loading: "Cargando…",
 };
 
@@ -523,4 +930,16 @@ const dicts: Record<Locale, Dict> = { zh, en, ja, es };
 
 export function getDict(locale: Locale): Dict {
   return dicts[locale] || dicts.zh;
+}
+
+// Pick a bilingual content field for a hypothesis row. The API returns
+// `content_zh` / `content_en` blobs (from the DB content_i18n column); when
+// absent we fall back to the raw top-level field so nothing blanks out.
+export function pickField(
+  h: { content_zh?: Record<string, string> | null; content_en?: Record<string, string> | null; [k: string]: any },
+  locale: Locale,
+  key: string,
+): string {
+  const loc = locale === "en" ? h.content_en : h.content_zh;
+  return (loc && loc[key]) || h[key] || "";
 }

@@ -7,6 +7,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLocale, LocaleSwitcher } from "@/lib/locale";
+import { pickField, getDict } from "@/lib/i18n";
+
+type T = ReturnType<typeof getDict>;
+type Loc = "zh" | "en" | "ja" | "es";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -24,6 +29,8 @@ type Hypothesis = {
   status: string;
   notes: string | null;
   has_proposal: boolean;
+  content_zh?: Record<string, string> | null;
+  content_en?: Record<string, string> | null;
 };
 
 type Proposal = {
@@ -52,6 +59,8 @@ type Proposal = {
 type Detail = {
   hypothesis: Hypothesis;
   proposal: Proposal | null;
+  proposal_zh?: Proposal | null;
+  proposal_en?: Proposal | null;
   raw_paradox: string;
   raw_hypothesis: string;
   raw_identification: string;
@@ -63,6 +72,7 @@ type Detail = {
 export default function HypothesisPage() {
   const params = useParams();
   const router = useRouter();
+  const { t, locale } = useLocale();
   const code = String(params?.code || "");
 
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -128,19 +138,19 @@ export default function HypothesisPage() {
   }, [onKey]);
 
   if (loading) {
-    return <Loading text="Loading proposal…" />;
+    return <Loading text={t.ppt_loading_proposal} />;
   }
   if (!detail) {
     const isNotFound = error?.includes("404") || error?.toLowerCase().includes("not found");
     return (
       <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117]">
-        <Header h={{ code, journal_target: "" } as Hypothesis} />
+        <Header h={{ code, journal_target: "" } as Hypothesis} t={t} locale={locale} />
         <section className="max-w-xl mx-auto px-8 py-24 text-center">
           <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-3">
-            {isNotFound ? "404 · NOT FOUND" : "ERROR"}
+            {isNotFound ? t.ppt_404 : "ERROR"}
           </div>
           <h1 className="text-3xl font-bold mb-4">
-            {isNotFound ? `Hypothesis ${code} doesn't exist` : "Couldn't load this hypothesis"}
+            {isNotFound ? t.ppt_not_exist.replace("{code}", code) : t.ppt_load_fail}
           </h1>
           <p className="text-[#4b5263] mb-8 leading-relaxed">
             {isNotFound
@@ -151,7 +161,7 @@ export default function HypothesisPage() {
             href="/dashboard?tab=hypotheses"
             className="inline-block bg-[#0e1117] text-white px-6 py-3 rounded-full font-medium hover:bg-[#0a8060] transition"
           >
-            ← Back to dashboard
+            {t.ppt_back_dash}
           </Link>
         </section>
       </main>
@@ -162,28 +172,27 @@ export default function HypothesisPage() {
   if (!detail.proposal) {
     return (
       <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117] ">
-        <Header h={detail.hypothesis} />
+        <Header h={detail.hypothesis} t={t} locale={locale} />
         <section className="max-w-3xl mx-auto px-8 py-16 text-center">
           <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-3">
-            {detail.hypothesis.code} · {detail.hypothesis.journal_target} · {detail.hypothesis.status}
+            {detail.hypothesis.code} · {pickField(detail.hypothesis, locale, "journal_target")} · {detail.hypothesis.status}
           </div>
-          <h1 className="text-4xl font-extrabold leading-tight mb-3">{detail.hypothesis.title}</h1>
-          <p className="italic text-[#0a8060] text-lg mb-10">&ldquo;{detail.hypothesis.paradox}&rdquo;</p>
+          <h1 className="text-4xl font-extrabold leading-tight mb-3">{pickField(detail.hypothesis, locale, "title")}</h1>
+          <p className="italic text-[#0a8060] text-lg mb-10">&ldquo;{pickField(detail.hypothesis, locale, "paradox")}&rdquo;</p>
 
           <div className="border border-[#e6e8ec] bg-white rounded-2xl p-8 max-w-xl mx-auto">
             <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">
-              ⚡ EXPAND TO PPT
+              {t.ppt_expand_eyebrow}
             </div>
             <p className="text-sm text-[#4b5263] mb-6 italic">
-              Hunter&apos;s 开题报告 framework. 13 sections: 一句话问题 / 为什么顶刊 / 为什么 Solvea 独家 /
-              实验设计 / Outcome / Hypotheses / Sample power / 实施成本 / 期刊 / 文献锚 / 风险 / 三位老师的电梯演讲。
+              {t.ppt_expand_desc}
             </p>
             <button
               onClick={generate}
               disabled={generating}
               className="bg-[#0e1117] text-[#ffffff] px-8 py-4 rounded-full font-medium hover:bg-[#0a8060] disabled:opacity-40 transition"
             >
-              {generating ? "Generating proposal (~30s)…" : "Generate full proposal →"}
+              {generating ? t.ppt_generating : t.ppt_generate}
             </button>
             {error && <div className="text-sm text-red-700 mt-4">{error}</div>}
           </div>
@@ -192,7 +201,8 @@ export default function HypothesisPage() {
     );
   }
 
-  const p = detail.proposal;
+  // pick the proposal in the active locale, falling back to the canonical one
+  const p = (locale === "en" ? detail.proposal_en : detail.proposal_zh) || detail.proposal;
   const h = detail.hypothesis;
 
   const slides: { title: string; body: React.ReactNode }[] = [
@@ -200,110 +210,110 @@ export default function HypothesisPage() {
     {
       title: "Cover",
       body: (
-        <CoverSlide h={h} />
+        <CoverSlide h={h} t={t} locale={locale} />
       ),
     },
     // SLIDE 1 · One-line question
     {
-      title: "一句话研究问题",
+      title: t.ppt_slide_question,
       body: (
         <BigQuote
-          eyebrow="ONE-LINE QUESTION"
+          eyebrow={t.ppt_slide_question}
           quote={p.one_line_question}
-          footer={`Theory anchor: ${h.theory_anchor}`}
+          footer={`${t.ppt_theory_anchors}: ${pickField(h, locale, "theory_anchor")}`}
         />
       ),
     },
     // SLIDE 2 · Why top-tier
     {
-      title: "为什么是顶刊级",
+      title: t.ppt_h_why_top,
       body: (
         <NumberedList
           eyebrow="WHY TOP-TIER"
-          heading="Why this lands at top-tier journals"
+          heading={t.ppt_h_why_top}
           items={p.why_top_tier}
         />
       ),
     },
     // SLIDE 3 · Why Solvea-exclusive
     {
-      title: "为什么 Solvea 独家",
+      title: t.ppt_h_why_solvea,
       body: (
         <NumberedList
           eyebrow="DATA UNIQUENESS"
-          heading="Why only Solvea can answer this"
+          heading={t.ppt_h_why_solvea}
           items={p.why_solvea_exclusive}
         />
       ),
     },
     // SLIDE 4 · Experiment design
     {
-      title: "实验设计",
+      title: t.ppt_design,
       body: (
-        <ExperimentSlide design={p.experiment_design} identification={h.identification} />
+        <ExperimentSlide design={p.experiment_design} identification={pickField(h, locale, "identification")} t={t} />
       ),
     },
     // SLIDE 5 · Outcomes
     {
-      title: "Outcome Variables",
+      title: t.ppt_outcomes,
       body: (
-        <OutcomesSlide outcomes={p.outcomes} />
+        <OutcomesSlide outcomes={p.outcomes} t={t} />
       ),
     },
     // SLIDE 6 · Pre-registered hypotheses
     {
-      title: "Pre-registered Hypotheses",
+      title: t.ppt_hypotheses,
       body: (
-        <HypothesesSlide items={p.pre_registered_hypotheses} />
+        <HypothesesSlide items={p.pre_registered_hypotheses} t={t} />
       ),
     },
     // SLIDE 7 · Sample size & power
     {
-      title: "Sample Size & Power",
+      title: t.ppt_sample_power,
       body: (
-        <SampleSizeSlide s={p.sample_size} />
+        <SampleSizeSlide s={p.sample_size} t={t} />
       ),
     },
     // SLIDE 8 · Implementation cost
     {
-      title: "实施路径与成本",
+      title: t.ppt_implementation,
       body: (
-        <ImplementationSlide impl={p.implementation} />
+        <ImplementationSlide impl={p.implementation} t={t} />
       ),
     },
     // SLIDE 9 · Journal targets
     {
-      title: "顶刊投稿目标",
+      title: t.ppt_journals,
       body: (
-        <JournalsSlide targets={p.journal_targets} />
+        <JournalsSlide targets={p.journal_targets} t={t} />
       ),
     },
     // SLIDE 10 · Theory anchors
     {
-      title: "文献框架",
+      title: t.ppt_theory_anchors,
       body: (
-        <TheorySlide anchors={p.theory_anchors} />
+        <TheorySlide anchors={p.theory_anchors} t={t} />
       ),
     },
     // SLIDE 11 · Risks
     {
-      title: "Risks & Mitigations",
+      title: t.ppt_risks,
       body: (
-        <RisksSlide risks={p.risks} />
+        <RisksSlide risks={p.risks} t={t} />
       ),
     },
     // SLIDE 12 · Elevator pitches
     {
-      title: "三位老师的电梯演讲",
+      title: t.ppt_pitches,
       body: (
-        <PitchesSlide pitches={p.elevator_pitches} />
+        <PitchesSlide pitches={p.elevator_pitches} t={t} />
       ),
     },
   ];
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117]  flex flex-col">
-      <Header h={h} onRegenerate={generate} />
+      <Header h={h} onRegenerate={generate} t={t} locale={locale} />
 
       <div className="flex-1 flex flex-col px-8 py-6 max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between mb-3">
@@ -328,7 +338,7 @@ export default function HypothesisPage() {
             disabled={slideIdx === 0}
             className="px-5 py-2 border border-[#0e1117] rounded-full font-medium disabled:opacity-30 hover:bg-[#0e1117] hover:text-[#ffffff] transition"
           >
-            ← Prev
+            {t.ppt_prev}
           </button>
           <div className="flex gap-1">
             {slides.map((_, i) => (
@@ -346,12 +356,12 @@ export default function HypothesisPage() {
             disabled={slideIdx === slides.length - 1}
             className="px-5 py-2 bg-[#0e1117] text-[#ffffff] rounded-full font-medium disabled:opacity-30 hover:bg-[#0a8060] transition"
           >
-            Next →
+            {t.ppt_next}
           </button>
         </div>
 
         <div className="text-center text-xs font-mono text-[#4b5263] mt-3 italic">
-          ← → space to navigate · Esc to exit · 0-9 to jump
+          {t.ppt_nav_hint}
         </div>
       </div>
     </main>
@@ -360,21 +370,21 @@ export default function HypothesisPage() {
 
 // ═══════════ SLIDE COMPONENTS ═══════════
 
-function CoverSlide({ h }: { h: Hypothesis }) {
+function CoverSlide({ h, t, locale }: { h: Hypothesis; t: T; locale: Loc }) {
   return (
     <div className="flex flex-col h-full justify-center">
       <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-4">
-        {h.code} · {h.journal_target} · {h.status}
+        {h.code} · {pickField(h, locale, "journal_target")} · {h.status}
       </div>
       <h1 className="text-5xl md:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6">
-        {h.title}
+        {pickField(h, locale, "title")}
       </h1>
       <p className="italic text-2xl text-[#0a8060] mb-8 leading-relaxed border-l-4 border-[#0a8060] pl-4">
-        &ldquo;{h.paradox}&rdquo;
+        &ldquo;{pickField(h, locale, "paradox")}&rdquo;
       </p>
       <div className="flex gap-6 text-sm font-mono text-[#4b5263]">
-        <span>Feasibility {"★".repeat(h.feasibility_6mo)}{"☆".repeat(5 - h.feasibility_6mo)}</span>
-        <span>A/B {"★".repeat(6 - h.ab_test_difficulty)}{"☆".repeat(h.ab_test_difficulty - 1)}</span>
+        <span>{t.dash_feas} {"★".repeat(h.feasibility_6mo)}{"☆".repeat(5 - h.feasibility_6mo)}</span>
+        <span>{t.dash_ab} {"★".repeat(6 - h.ab_test_difficulty)}{"☆".repeat(h.ab_test_difficulty - 1)}</span>
       </div>
       <div className="mt-12 text-sm text-[#4b5263] font-mono">
         郭振 · HKU DBA · arxify.io
@@ -412,20 +422,20 @@ function NumberedList({ eyebrow, heading, items }: { eyebrow: string; heading: s
   );
 }
 
-function ExperimentSlide({ design, identification }: { design: any; identification: string }) {
+function ExperimentSlide({ design, identification, t }: { design: any; identification: string; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">EXPERIMENT DESIGN</div>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_design}</div>
       <h2 className="text-3xl font-extrabold mb-6">{design.approach}</h2>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
-        <KV k="Randomization unit" v={design.randomization_unit} />
-        <KV k="Duration" v={`${design.duration_weeks} weeks`} />
-        <KV k="Logic" v={design.randomization_logic} span="md:col-span-2" />
+        <KV k={t.ppt_rand_unit} v={design.randomization_unit} />
+        <KV k={t.ppt_duration} v={`${design.duration_weeks}${t.ppt_weeks_unit}`} />
+        <KV k={t.ppt_logic} v={design.randomization_logic} span="md:col-span-2" />
       </div>
 
       <div className="mb-6">
-        <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-3">Treatment arms</div>
+        <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-3">{t.ppt_treatment_arms}</div>
         <ol className="space-y-2">
           {design.treatment_arms.map((arm: string, i: number) => (
             <li key={i} className="flex gap-3 items-start">
@@ -437,23 +447,23 @@ function ExperimentSlide({ design, identification }: { design: any; identificati
       </div>
 
       <div className="bg-[#e7f4ee] border-l-2 border-[#0a8060] p-4 text-sm italic">
-        <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-1 not-italic">Identification</div>
+        <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-1 not-italic">{t.ppt_identification}</div>
         {identification}
       </div>
     </div>
   );
 }
 
-function OutcomesSlide({ outcomes }: { outcomes: any }) {
+function OutcomesSlide({ outcomes, t }: { outcomes: any; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">OUTCOMES</div>
-      <h2 className="text-3xl font-extrabold mb-6">What we measure</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_outcomes}</div>
+      <h2 className="text-3xl font-extrabold mb-6">{t.ppt_h_outcomes}</h2>
 
       <div className="grid md:grid-cols-3 gap-5">
-        <OutcomeCol label="Primary" items={outcomes.primary} highlight />
-        <OutcomeCol label="Secondary" items={outcomes.secondary} />
-        <OutcomeCol label="Mediators" items={outcomes.mediators} />
+        <OutcomeCol label={t.ppt_primary} items={outcomes.primary} highlight />
+        <OutcomeCol label={t.ppt_secondary} items={outcomes.secondary} />
+        <OutcomeCol label={t.ppt_mediators} items={outcomes.mediators} />
       </div>
     </div>
   );
@@ -470,11 +480,11 @@ function OutcomeCol({ label, items, highlight }: { label: string; items: string[
   );
 }
 
-function HypothesesSlide({ items }: { items: any[] }) {
+function HypothesesSlide({ items, t }: { items: any[]; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">PRE-REGISTERED</div>
-      <h2 className="text-3xl font-extrabold mb-6">Hypotheses</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_pre_registered}</div>
+      <h2 className="text-3xl font-extrabold mb-6">{t.ppt_hypotheses}</h2>
       <ol className="space-y-4">
         {items.map((h, i) => (
           <li key={i} className="border-l-2 border-[#0a8060] pl-4 py-1">
@@ -489,42 +499,42 @@ function HypothesesSlide({ items }: { items: any[] }) {
   );
 }
 
-function SampleSizeSlide({ s }: { s: any }) {
+function SampleSizeSlide({ s, t }: { s: any; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">SAMPLE & POWER</div>
-      <h2 className="text-3xl font-extrabold mb-8">How big? How long?</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_sample_power}</div>
+      <h2 className="text-3xl font-extrabold mb-8">{t.ppt_h_sample}</h2>
       <div className="grid md:grid-cols-2 gap-4 mb-6">
-        <BigStat label="Per arm" value={s.per_arm?.toLocaleString?.() || s.per_arm} />
-        <BigStat label="Total N" value={s.total?.toLocaleString?.() || s.total} />
-        <BigStat label="Power" value={`${(s.power * 100).toFixed(0)}%`} />
+        <BigStat label={t.ppt_per_arm} value={s.per_arm?.toLocaleString?.() || s.per_arm} />
+        <BigStat label={t.ppt_total_n} value={s.total?.toLocaleString?.() || s.total} />
+        <BigStat label={t.ppt_power} value={`${(s.power * 100).toFixed(0)}%`} />
         <BigStat label="α" value={String(s.alpha)} />
       </div>
       <div className="space-y-3 text-sm">
-        <KV k="MDE" v={s.mde} />
-        <KV k="Weeks to collect" v={`${s.weeks_to_collect}`} />
+        <KV k={t.ppt_mde} v={s.mde} />
+        <KV k={t.ppt_weeks_collect} v={`${s.weeks_to_collect}`} />
       </div>
     </div>
   );
 }
 
-function ImplementationSlide({ impl }: { impl: any }) {
+function ImplementationSlide({ impl, t }: { impl: any; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">IMPLEMENTATION</div>
-      <h2 className="text-3xl font-extrabold mb-6">Cost & timeline</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_implementation}</div>
+      <h2 className="text-3xl font-extrabold mb-6">{t.ppt_h_impl}</h2>
       <div className="grid md:grid-cols-3 gap-4 mb-6">
-        <BigStat label="Engineering" value={`${impl.engineering_days} d`} />
-        <BigStat label="Compute cost" value={impl.cost_usd} />
-        <BigStat label="Ops needed" value={`${impl.ops_steps.length} steps`} />
+        <BigStat label={t.ppt_engineering} value={`${impl.engineering_days} d`} />
+        <BigStat label={t.ppt_compute_cost} value={impl.cost_usd} />
+        <BigStat label={t.ppt_ops_needed} value={`${impl.ops_steps.length}`} />
       </div>
       <div className="grid md:grid-cols-2 gap-6 text-sm">
         <div>
-          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">Ops Steps</div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">{t.ppt_ops_steps}</div>
           <ul className="space-y-1">{impl.ops_steps.map((s: string, i: number) => <li key={i}>· {s}</li>)}</ul>
         </div>
         <div>
-          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">Dependencies</div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263] mb-2">{t.ppt_dependencies}</div>
           <ul className="space-y-1">{impl.dependencies.map((d: string, i: number) => <li key={i}>· {d}</li>)}</ul>
         </div>
       </div>
@@ -532,19 +542,19 @@ function ImplementationSlide({ impl }: { impl: any }) {
   );
 }
 
-function JournalsSlide({ targets }: { targets: any[] }) {
+function JournalsSlide({ targets, t }: { targets: any[]; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">JOURNAL TARGETS</div>
-      <h2 className="text-3xl font-extrabold mb-6">Where this lands</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_journals}</div>
+      <h2 className="text-3xl font-extrabold mb-6">{t.ppt_h_journals}</h2>
       <div className="grid md:grid-cols-2 gap-4">
-        {targets.map((t, i) => (
-          <div key={i} className={`rounded-xl p-5 ${t.tier === "primary" ? "border-2 border-[#0a8060] bg-[#e7f4ee]" : "border border-[#e6e8ec]"}`}>
+        {targets.map((tg, i) => (
+          <div key={i} className={`rounded-xl p-5 ${tg.tier === "primary" ? "border-2 border-[#0a8060] bg-[#e7f4ee]" : "border border-[#e6e8ec]"}`}>
             <div className="flex items-center justify-between mb-2">
-              <div className="font-bold text-xl">{t.journal}</div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#4b5263]">{t.tier}</span>
+              <div className="font-bold text-xl">{tg.journal}</div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-[#4b5263]">{tg.tier}</span>
             </div>
-            <div className="text-sm text-[#4b5263] italic">{t.reason}</div>
+            <div className="text-sm text-[#4b5263] italic">{tg.reason}</div>
           </div>
         ))}
       </div>
@@ -552,11 +562,11 @@ function JournalsSlide({ targets }: { targets: any[] }) {
   );
 }
 
-function TheorySlide({ anchors }: { anchors: any[] }) {
+function TheorySlide({ anchors, t }: { anchors: any[]; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">THEORY ANCHORS</div>
-      <h2 className="text-3xl font-extrabold mb-6">文献框架</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_theory_anchors}</div>
+      <h2 className="text-3xl font-extrabold mb-6">{t.ppt_h_theory}</h2>
       <div className="space-y-4">
         {anchors.map((a, i) => (
           <div key={i} className="border-l-2 border-[#0a8060] pl-4 py-1">
@@ -570,15 +580,15 @@ function TheorySlide({ anchors }: { anchors: any[] }) {
   );
 }
 
-function RisksSlide({ risks }: { risks: any[] }) {
+function RisksSlide({ risks, t }: { risks: any[]; t: T }) {
   const sev = (s: string) =>
     s === "high" ? "bg-red-100 text-red-900 border-red-300" :
     s === "low" ? "bg-green-100 text-green-900 border-green-300" :
     "bg-amber-100 text-amber-900 border-amber-300";
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">RISKS</div>
-      <h2 className="text-3xl font-extrabold mb-6">What could kill this</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_risks}</div>
+      <h2 className="text-3xl font-extrabold mb-6">{t.ppt_h_risks}</h2>
       <div className="space-y-3">
         {risks.map((r, i) => (
           <div key={i} className="border border-[#e6e8ec] rounded-xl p-4">
@@ -586,7 +596,7 @@ function RisksSlide({ risks }: { risks: any[] }) {
               <div className="font-bold text-base flex-1">{r.risk}</div>
               <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded-full border ${sev(r.severity)}`}>{r.severity}</span>
             </div>
-            <div className="text-sm text-[#4b5263]"><strong className="text-[#0e1117]">Mitigation: </strong>{r.mitigation}</div>
+            <div className="text-sm text-[#4b5263]"><strong className="text-[#0e1117]">{t.ppt_mitigation}</strong>{r.mitigation}</div>
           </div>
         ))}
       </div>
@@ -594,11 +604,11 @@ function RisksSlide({ risks }: { risks: any[] }) {
   );
 }
 
-function PitchesSlide({ pitches }: { pitches: any }) {
+function PitchesSlide({ pitches, t }: { pitches: any; t: T }) {
   return (
     <div>
-      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">ELEVATOR PITCHES</div>
-      <h2 className="text-3xl font-extrabold mb-6">三位导师的 30 秒 pitch</h2>
+      <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-2">{t.ppt_pitches}</div>
+      <h2 className="text-3xl font-extrabold mb-6">{t.ppt_h_pitches}</h2>
       <div className="space-y-4">
         <PitchCard advisor="林晨 · HKU (主导师)" content={pitches.lin} flavor="商科 / 识别" />
         <PitchCard advisor="周黎安 · PKU" content={pitches.zhou} flavor="制度经济学" />
@@ -640,22 +650,23 @@ function BigStat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function Header({ h, onRegenerate }: { h: Hypothesis; onRegenerate?: () => void }) {
+function Header({ h, onRegenerate, t, locale }: { h: Hypothesis; onRegenerate?: () => void; t: T; locale: Loc }) {
   return (
     <header className="border-b border-[#e6e8ec]">
       <div className="flex items-center justify-between px-6 py-3 max-w-5xl mx-auto">
         <div className="flex items-center gap-4">
           <Link href="/dashboard?tab=hypotheses" className="text-xs font-mono uppercase tracking-widest text-[#4b5263] hover:text-[#0e1117]">
-            ← back
+            {t.ppt_back}
           </Link>
           <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060]">
-            {h.code} · {h.journal_target}
+            {h.code} · {pickField(h, locale, "journal_target")}
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <LocaleSwitcher />
           {onRegenerate && (
             <button onClick={onRegenerate} className="text-xs font-mono text-[#4b5263] hover:text-[#0e1117]">
-              ↻ regenerate
+              {t.ppt_regenerate}
             </button>
           )}
           <Link href="/" className="text-xl font-bold tracking-tight">

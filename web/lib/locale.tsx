@@ -3,7 +3,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Locale, LOCALES, LOCALE_LABELS, getDict } from "./i18n";
+import { Locale, EXPOSED_LOCALES, LOCALE_LABELS, getDict } from "./i18n";
 
 type Ctx = {
   locale: Locale;
@@ -16,12 +16,11 @@ const LocaleCtx = createContext<Ctx | null>(null);
 function detect(): Locale {
   if (typeof window === "undefined") return "zh";
   const stored = window.localStorage.getItem("arxify_locale") as Locale | null;
-  if (stored && LOCALES.includes(stored)) return stored;
+  // only honor a stored locale that is still exposed (avoids being stuck in ja/es
+  // with no button to switch out)
+  if (stored && EXPOSED_LOCALES.includes(stored)) return stored;
   const nav = (navigator.language || "zh").slice(0, 2).toLowerCase();
-  if (nav.startsWith("zh")) return "zh";
   if (nav.startsWith("en")) return "en";
-  if (nav.startsWith("ja")) return "ja";
-  if (nav.startsWith("es")) return "es";
   return "zh";
 }
 
@@ -53,7 +52,7 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
   const { locale, setLocale } = useContext(LocaleCtx) || { locale: "zh", setLocale: () => {} };
   return (
     <div className={`flex gap-1 items-center font-mono text-xs ${className}`}>
-      {LOCALES.map((l, i) => (
+      {EXPOSED_LOCALES.map((l, i) => (
         <span key={l} className="contents">
           {i > 0 && <span className="text-[#cbd5e1]">·</span>}
           <button
@@ -67,8 +66,6 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
           >
             {l === "zh" && "中"}
             {l === "en" && "EN"}
-            {l === "ja" && "日"}
-            {l === "es" && "ES"}
           </button>
         </span>
       ))}

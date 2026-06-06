@@ -39,6 +39,8 @@ class Hypothesis(BaseModel):
     notes: str | None
     has_proposal: bool = False
     proposal_generated_at: str | None = None
+    content_zh: dict | None = None
+    content_en: dict | None = None
 
 
 class DataSource(BaseModel):
@@ -106,6 +108,16 @@ def get_my_workspace(token: str):
         d["has_proposal"] = bool(d.pop("proposal_json", None))
         d.pop("workspace_id", None)
         d.pop("created_at", None)
+        # split bilingual content blob into content_zh / content_en
+        ci = d.pop("content_i18n", None)
+        d.pop("proposal_i18n", None)  # not needed in list view
+        if ci:
+            try:
+                parsed = json.loads(ci)
+                d["content_zh"] = parsed.get("zh")
+                d["content_en"] = parsed.get("en")
+            except Exception:
+                pass
         return Hypothesis(**d)
 
     return WorkspaceFull(
@@ -136,6 +148,8 @@ class ProposalSection(BaseModel):
 class HypothesisDetail(BaseModel):
     hypothesis: Hypothesis
     proposal: ProposalSection | None
+    proposal_zh: ProposalSection | None = None
+    proposal_en: ProposalSection | None = None
     raw_title: str
     raw_paradox: str
     raw_hypothesis: str
@@ -168,6 +182,27 @@ def get_hypothesis(code: str, token: str):
             proposal_obj = ProposalSection(**json.loads(proposal_json))
         except Exception:
             proposal_obj = None
+    # bilingual proposal (translated blob)
+    proposal_i18n = d.pop("proposal_i18n", None)
+    proposal_zh = proposal_en = None
+    if proposal_i18n:
+        try:
+            pi = json.loads(proposal_i18n)
+            if pi.get("zh"):
+                proposal_zh = ProposalSection(**pi["zh"])
+            if pi.get("en"):
+                proposal_en = ProposalSection(**pi["en"])
+        except Exception:
+            pass
+    # split content_i18n for the Hypothesis sub-model
+    ci = d.pop("content_i18n", None)
+    if ci:
+        try:
+            cp = json.loads(ci)
+            d["content_zh"] = cp.get("zh")
+            d["content_en"] = cp.get("en")
+        except Exception:
+            pass
     d.pop("workspace_id", None)
     d.pop("created_at", None)
     d["has_proposal"] = bool(proposal_json)
@@ -175,6 +210,8 @@ def get_hypothesis(code: str, token: str):
     return HypothesisDetail(
         hypothesis=Hypothesis(**d),
         proposal=proposal_obj,
+        proposal_zh=proposal_zh,
+        proposal_en=proposal_en,
         raw_title=row["title"],
         raw_paradox=row["paradox"],
         raw_hypothesis=row["hypothesis"],

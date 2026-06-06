@@ -106,4 +106,18 @@ def init() -> None:
         """)
 
 
+def migrate() -> None:
+    """Idempotent column additions (SQLite can't ALTER via CREATE IF NOT EXISTS).
+
+    Adds bilingual content columns to `hypotheses`. Safe to run on every boot.
+    """
+    with conn() as c:
+        cols = {r["name"] for r in c.execute("PRAGMA table_info(hypotheses)")}
+        if "content_i18n" not in cols:
+            c.execute("ALTER TABLE hypotheses ADD COLUMN content_i18n TEXT")
+        if "proposal_i18n" not in cols:
+            c.execute("ALTER TABLE hypotheses ADD COLUMN proposal_i18n TEXT")
+
+
 init()
+migrate()

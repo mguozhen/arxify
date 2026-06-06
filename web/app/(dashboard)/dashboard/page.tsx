@@ -6,6 +6,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useLocale, LocaleSwitcher } from "@/lib/locale";
+import { pickField, getDict } from "@/lib/i18n";
+
+type T = ReturnType<typeof getDict>;
+type Loc = "zh" | "en" | "ja" | "es";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const LAUNCH_TARGET = 100;
@@ -33,6 +38,9 @@ type Hypothesis = {
   ab_test_difficulty: number;
   status: string;
   notes: string | null;
+  content_zh?: Record<string, string> | null;
+  content_en?: Record<string, string> | null;
+  has_proposal?: boolean;
 };
 
 type DataSource = {
@@ -60,6 +68,7 @@ type WorkspaceFull = {
 };
 
 export default function DashboardPage() {
+  const { t, locale } = useLocale();
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceFull | null>(null);
@@ -119,7 +128,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-[#f7f8fa] flex items-center justify-center ">
-        <p className="italic text-[#4b5263]">Loading…</p>
+        <p className="italic text-[#4b5263]">{t.loading}</p>
       </main>
     );
   }
@@ -130,7 +139,7 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117] ">
-      <Header email={status.email} />
+      <Header email={status.email} t={t} />
 
       <div className="max-w-6xl mx-auto px-6 py-6">
         {workspace ? (
@@ -148,19 +157,20 @@ export default function DashboardPage() {
               hasWs={true}
               hypCount={workspace.hypotheses.length}
               dsCount={workspace.data_sources.length}
+              t={t}
             />
 
-            {tab === "chat" && <ChatTab token={token} initial={workspace.chat} />}
-            {tab === "hypotheses" && <HypothesesTab items={workspace.hypotheses} />}
+            {tab === "chat" && <ChatTab token={token} initial={workspace.chat} t={t} />}
+            {tab === "hypotheses" && <HypothesesTab items={workspace.hypotheses} locale={locale} t={t} />}
             {tab === "data" && <DataTab items={workspace.data_sources} />}
-            {tab === "queue" && <QueueTab status={status} />}
+            {tab === "queue" && <QueueTab status={status} t={t} />}
           </>
         ) : (
           <>
             <h1 className="text-3xl md:text-4xl font-extrabold mb-2">
-              You&apos;re #<span className="italic text-[#0a8060]">{status.position}</span> in line.
+              {t.dash_in_line_a}<span className="italic text-[#0a8060]">{status.position}</span>{t.dash_in_line_b}
             </h1>
-            <QueueTab status={status} />
+            <QueueTab status={status} t={t} />
           </>
         )}
       </div>
@@ -171,22 +181,23 @@ export default function DashboardPage() {
 // ───────────────────────────────────────────────────────────────────────
 
 function Tabs({
-  tab, setTab, hasWs, hypCount, dsCount,
+  tab, setTab, hasWs, hypCount, dsCount, t,
 }: {
   tab: string;
   setTab: (t: any) => void;
   hasWs: boolean;
   hypCount: number;
   dsCount: number;
+  t: T;
 }) {
   const tabs = hasWs
     ? [
-        { id: "hypotheses", label: `📋 Hypotheses · ${hypCount}` },
-        { id: "data", label: `🗄️ Data sources · ${dsCount}` },
-        { id: "chat", label: "💬 AI Advisor" },
-        { id: "queue", label: "📬 Waitlist" },
+        { id: "hypotheses", label: `${t.dash_tab_hyps} · ${hypCount}` },
+        { id: "data", label: `${t.dash_tab_data} · ${dsCount}` },
+        { id: "chat", label: t.dash_tab_advisor },
+        { id: "queue", label: t.dash_tab_queue },
       ]
-    : [{ id: "queue", label: "📬 Waitlist" }];
+    : [{ id: "queue", label: t.dash_tab_queue }];
   return (
     <div className="mb-6">
       <div className="flex gap-2 overflow-x-auto">
@@ -210,7 +221,7 @@ function Tabs({
 
 // ───────────────────────────────────────────────────────────────────────
 
-function ChatTab({ token, initial }: { token: string; initial: ChatMessage[] }) {
+function ChatTab({ token, initial, t }: { token: string; initial: ChatMessage[]; t: T }) {
   const [messages, setMessages] = useState<ChatMessage[]>(initial);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -247,14 +258,14 @@ function ChatTab({ token, initial }: { token: string; initial: ChatMessage[] }) 
       <div className="flex-1 overflow-y-auto space-y-4 pb-4">
         {messages.length === 0 && (
           <div className="text-center text-[#4b5263] italic mt-12">
-            Ask anything about your 17 directions, data sources, or advisor strategy.
+            {t.dash_chat_empty}
           </div>
         )}
         {messages.map((m) => (
-          <Bubble key={m.id} msg={m} />
+          <Bubble key={m.id} msg={m} t={t} />
         ))}
         {sending && (
-          <Bubble msg={{ id: -1, role: "assistant", content: "thinking…", model: null, created_at: "" }} />
+          <Bubble msg={{ id: -1, role: "assistant", content: t.dash_chat_thinking, model: null, created_at: "" }} t={t} />
         )}
         <div ref={bottomRef} />
       </div>
@@ -274,7 +285,7 @@ function ChatTab({ token, initial }: { token: string; initial: ChatMessage[] }) 
             }
           }}
           rows={2}
-          placeholder="e.g. D8 vs D14 哪个更稳? ⌘+Enter to send"
+          placeholder={t.dash_chat_placeholder}
           className="flex-1 px-4 py-3 border border-[#e6e8ec] rounded-lg focus:border-[#0a8060] focus:outline-none text-sm resize-none"
         />
         <button
@@ -282,14 +293,14 @@ function ChatTab({ token, initial }: { token: string; initial: ChatMessage[] }) 
           disabled={sending || !input.trim()}
           className="bg-[#0e1117] text-[#ffffff] px-6 rounded-lg font-medium hover:bg-[#0a8060] disabled:opacity-40 transition"
         >
-          {sending ? "..." : "Send"}
+          {sending ? "..." : t.dash_chat_send}
         </button>
       </div>
     </div>
   );
 }
 
-function Bubble({ msg }: { msg: ChatMessage }) {
+function Bubble({ msg, t }: { msg: ChatMessage; t: T }) {
   const isUser = msg.role === "user";
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -302,7 +313,7 @@ function Bubble({ msg }: { msg: ChatMessage }) {
       >
         {!isUser && (
           <div className="text-xs font-mono uppercase tracking-widest text-[#0a8060] mb-1">
-            ai advisor · claude
+            {t.dash_chat_advisor_label}
           </div>
         )}
         <div className="whitespace-pre-wrap text-[15px] leading-relaxed">{msg.content}</div>
@@ -320,7 +331,7 @@ const STATUS_COLOR: Record<string, string> = {
   future: "bg-transparent text-[#8b94a3] border border-dashed border-[#e6e8ec]",
 };
 
-function HypothesesTab({ items }: { items: Hypothesis[] }) {
+function HypothesesTab({ items, locale, t }: { items: Hypothesis[]; locale: Loc; t: T }) {
   const grouped = items.reduce<Record<string, Hypothesis[]>>((acc, h) => {
     (acc[h.status] ||= []).push(h);
     return acc;
@@ -339,7 +350,7 @@ function HypothesesTab({ items }: { items: Hypothesis[] }) {
             </h2>
             <div className="grid md:grid-cols-2 gap-4">
               {list.map((h) => (
-                <HypCard key={h.id} h={h} />
+                <HypCard key={h.id} h={h} locale={locale} t={t} />
               ))}
             </div>
           </section>
@@ -349,46 +360,45 @@ function HypothesesTab({ items }: { items: Hypothesis[] }) {
   );
 }
 
-function HypCard({ h }: { h: Hypothesis }) {
+function HypCard({ h, locale, t }: { h: Hypothesis; locale: Loc; t: T }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="border border-[#e6e8ec] rounded-xl bg-white p-6 hover:border-[#c2e5d8] shadow-mercury transition group">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-[#ecf4f0] text-[#0a8060] tracking-wide">{h.code}</span>
-          <span className="text-[11px] font-medium text-[#8b94a3] uppercase tracking-wider">{h.journal_target}</span>
+          <span className="text-[11px] font-medium text-[#8b94a3] uppercase tracking-wider">{pickField(h, locale, "journal_target")}</span>
         </div>
         <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${STATUS_COLOR[h.status] || ""}`}>
           {h.status}
         </span>
       </div>
-      <h3 className="font-semibold text-[17px] leading-snug mb-2 text-[#0e1117] tracking-tight">{h.title}</h3>
-      <p className="text-[#2a3441] text-[14px] mb-4 leading-relaxed">{h.paradox}</p>
+      <h3 className="font-semibold text-[17px] leading-snug mb-2 text-[#0e1117] tracking-tight">{pickField(h, locale, "title")}</h3>
+      <p className="text-[#2a3441] text-[14px] mb-4 leading-relaxed">{pickField(h, locale, "paradox")}</p>
       <div className="flex gap-4 text-[11px] font-mono text-[#4b5263] mb-3 tabular">
-        <span>FEAS <span className="text-[#0a8060]">{"★".repeat(h.feasibility_6mo)}</span>{"☆".repeat(5 - h.feasibility_6mo)}</span>
-        <span>A/B <span className="text-[#0a8060]">{"★".repeat(6 - h.ab_test_difficulty)}</span>{"☆".repeat(h.ab_test_difficulty - 1)}</span>
+        <span>{t.dash_feas} <span className="text-[#0a8060]">{"★".repeat(h.feasibility_6mo)}</span>{"☆".repeat(5 - h.feasibility_6mo)}</span>
+        <span>{t.dash_ab} <span className="text-[#0a8060]">{"★".repeat(6 - h.ab_test_difficulty)}</span>{"☆".repeat(h.ab_test_difficulty - 1)}</span>
       </div>
       <div className="flex items-center justify-between border-t border-[#e6e8ec] pt-3">
         <button
           onClick={() => setOpen(!open)}
           className="text-xs font-mono text-[#4b5263] hover:text-[#0e1117] uppercase tracking-widest"
         >
-          {open ? "− less" : "+ more"}
+          {open ? t.dash_less : t.dash_more}
         </button>
         <Link
           href={`/dashboard/hypothesis/${h.code}`}
           className="text-xs font-mono text-[#0a8060] hover:text-[#0e1117] uppercase tracking-widest font-bold"
         >
-          {/* @ts-ignore — has_proposal injected by api */}
-          {(h as any).has_proposal ? "view ppt →" : "expand to ppt →"}
+          {h.has_proposal ? t.dash_view_ppt : t.dash_expand_ppt}
         </Link>
       </div>
       {open && (
         <dl className="space-y-3 mt-3 text-sm border-t border-[#f3f4f7] pt-3">
-          <Row label="Hypothesis">{h.hypothesis}</Row>
-          <Row label="Identification">{h.identification}</Row>
-          <Row label="Theory anchor">{h.theory_anchor}</Row>
-          {h.notes && <Row label="Notes">{h.notes}</Row>}
+          <Row label={t.dash_row_hypothesis}>{pickField(h, locale, "hypothesis")}</Row>
+          <Row label={t.dash_row_identification}>{pickField(h, locale, "identification")}</Row>
+          <Row label={t.dash_row_theory}>{pickField(h, locale, "theory_anchor")}</Row>
+          {pickField(h, locale, "notes") && <Row label={t.dash_row_notes}>{pickField(h, locale, "notes")}</Row>}
         </dl>
       )}
     </div>
@@ -430,7 +440,7 @@ function DataTab({ items }: { items: DataSource[] }) {
 
 // ───────────────────────────────────────────────────────────────────────
 
-function QueueTab({ status }: { status: Status }) {
+function QueueTab({ status, t }: { status: Status; t: T }) {
   const pct = Math.min(100, Math.round((status.total / LAUNCH_TARGET) * 100));
   const remaining = Math.max(0, LAUNCH_TARGET - status.total);
   const shareLink = typeof window !== "undefined" ? `${window.location.origin}/signup` : "";
@@ -439,7 +449,7 @@ function QueueTab({ status }: { status: Status }) {
     <div className="max-w-2xl">
       <div className="bg-[#e7f4ee] rounded-2xl p-6 mb-6 border border-[#f3f4f7]">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263]">Launch progress</div>
+          <div className="text-xs font-mono uppercase tracking-widest text-[#4b5263]">{t.queue_launch_progress}</div>
           <div className="text-sm font-mono">
             <strong className="text-[#0e1117] text-base">{status.total}</strong>
             <span className="text-[#4b5263]"> / {LAUNCH_TARGET}</span>
@@ -449,30 +459,30 @@ function QueueTab({ status }: { status: Status }) {
           <div className="h-full bg-[#0a8060] transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="text-sm text-[#4b5263] mt-3 italic">
-          {remaining > 0 ? `${remaining} more to launch.` : "🎉 We hit target. Beta opening this week."}
+          {remaining > 0 ? t.queue_more_to_launch.replace("{n}", String(remaining)) : t.queue_hit_target}
         </p>
       </div>
 
       <div className="border border-[#e6e8ec] rounded-2xl bg-white p-5 mb-4">
-        <h3 className="font-bold mb-2">Your signup info</h3>
+        <h3 className="font-bold mb-2">{t.queue_signup_info}</h3>
         <dl className="space-y-2 text-sm">
-          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Position</dt><dd>#{status.position}</dd></div>
-          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Email</dt><dd>{status.email}</dd></div>
-          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Joined</dt><dd>{status.created_at}</dd></div>
-          {status.source && <div className="flex gap-2"><dt className="text-[#4b5263] w-24">Source</dt><dd>{status.source}</dd></div>}
+          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">{t.queue_position}</dt><dd>#{status.position}</dd></div>
+          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">{t.queue_email}</dt><dd>{status.email}</dd></div>
+          <div className="flex gap-2"><dt className="text-[#4b5263] w-24">{t.queue_joined}</dt><dd>{status.created_at}</dd></div>
+          {status.source && <div className="flex gap-2"><dt className="text-[#4b5263] w-24">{t.queue_source}</dt><dd>{status.source}</dd></div>}
         </dl>
       </div>
 
       <div className="border border-[#e6e8ec] rounded-2xl bg-white p-5">
-        <h3 className="font-bold mb-2">Refer friends</h3>
-        <p className="text-sm text-[#4b5263] mb-3 italic">Referred: {status.referred_count}</p>
+        <h3 className="font-bold mb-2">{t.queue_refer}</h3>
+        <p className="text-sm text-[#4b5263] mb-3 italic">{t.queue_referred}{status.referred_count}</p>
         <div className="flex gap-2">
           <input readOnly value={shareLink} onClick={(e) => (e.target as HTMLInputElement).select()}
             className="flex-1 px-3 py-2 border border-[#e6e8ec] rounded-lg text-sm font-mono bg-[#f7f8fa]" />
           <button
-            onClick={() => { navigator.clipboard.writeText(shareLink); alert("Copied!"); }}
+            onClick={() => { navigator.clipboard.writeText(shareLink); alert(t.queue_copied); }}
             className="bg-[#0e1117] text-[#ffffff] px-3 py-2 rounded-lg text-sm hover:bg-[#0a8060] transition"
-          >Copy</button>
+          >{t.queue_copy}</button>
         </div>
       </div>
     </div>
@@ -481,7 +491,7 @@ function QueueTab({ status }: { status: Status }) {
 
 // ───────────────────────────────────────────────────────────────────────
 
-function Header({ email }: { email: string }) {
+function Header({ email, t }: { email: string; t: T }) {
   return (
     <header className="border-b border-[#e6e8ec]">
       <div className="flex items-center justify-between px-6 py-3 max-w-6xl mx-auto">
@@ -489,8 +499,9 @@ function Header({ email }: { email: string }) {
           arxify<span className="text-[#0a8060]">.io</span>
         </Link>
         <div className="flex items-center gap-4 text-sm">
-          <Link href="/try" className="text-[#4b5263] hover:text-[#0e1117]">Try free</Link>
-          <Link href="/pricing" className="text-[#4b5263] hover:text-[#0e1117]">Pricing</Link>
+          <LocaleSwitcher />
+          <Link href="/try" className="text-[#4b5263] hover:text-[#0e1117]">{t.nav_try}</Link>
+          <Link href="/pricing" className="text-[#4b5263] hover:text-[#0e1117]">{t.nav_pricing}</Link>
           <span className="text-xs font-mono text-[#4b5263]">{email}</span>
         </div>
       </div>
@@ -499,27 +510,28 @@ function Header({ email }: { email: string }) {
 }
 
 function NoToken() {
+  const { t } = useLocale();
   return (
     <main className="min-h-screen bg-[#f7f8fa] text-[#0e1117] ">
       <section className="max-w-xl mx-auto px-8 py-20 text-center">
         <h1 className="text-4xl font-extrabold mb-4">
-          You&apos;re not <span className="italic text-[#0a8060]">in</span> yet.
+          {t.notoken_title_a}<span className="italic text-[#0a8060]">{t.notoken_title_em}</span>
         </h1>
         <p className="text-[#4b5263] mb-8 italic">
-          Either you haven&apos;t joined yet, or you&apos;re on a different device.
+          {t.notoken_desc}
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link
             href="/login"
             className="inline-block border border-[#0e1117] px-7 py-3.5 rounded-md font-medium hover:bg-[#0e1117] hover:text-white transition"
           >
-            Log in
+            {t.notoken_login}
           </Link>
           <Link
             href="/signup"
             className="inline-block bg-[#0e1117] text-[#ffffff] px-7 py-3.5 rounded-md font-medium hover:bg-[#0a8060] transition"
           >
-            Join waitlist →
+            {t.notoken_join}
           </Link>
         </div>
       </section>
