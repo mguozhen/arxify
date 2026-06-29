@@ -76,8 +76,10 @@ def main() -> None:
         hyp_cols = [
             "code", "title", "paradox", "hypothesis", "identification",
             "theory_anchor", "journal_target", "feasibility_6mo",
-            "ab_test_difficulty", "status", "notes",
+            "ab_test_difficulty", "novelty_score", "scarcity_score",
+            "status", "notes",
             "content_i18n", "proposal_i18n", "proposal_json",
+            "proposal_variants_json",
             "proposal_generated_at",
         ]
         rows = c.execute(

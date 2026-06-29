@@ -44,6 +44,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://arxify.io",
         "https://arxify.ai",
+        "https://paper.11agents.ai",
         "https://paer.paircode.ai",
         "https://arxify-omega.vercel.app",
     ],

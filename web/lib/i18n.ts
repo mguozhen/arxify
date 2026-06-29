@@ -111,7 +111,13 @@ type Dict = {
   ppt_expand_eyebrow: string;
   ppt_expand_desc: string;
   ppt_generate: string;
+  ppt_generate_current: string;
+  ppt_generate_all: string;
   ppt_generating: string;
+  ppt_generating_all: string;
+  ppt_model_compare: string;
+  ppt_generated: string;
+  ppt_not_generated: string;
   ppt_nav_hint: string;
 
   // dashboard chrome
@@ -171,6 +177,18 @@ type Dict = {
   ppt_logic: string;
   ppt_treatment_arms: string;
   ppt_identification: string;
+  ppt_causal_plan: string;
+  ppt_h_causal: string;
+  ppt_old_proposal_note: string;
+  ppt_causal_question: string;
+  ppt_estimand: string;
+  ppt_unit_analysis: string;
+  ppt_assignment: string;
+  ppt_counterfactual: string;
+  ppt_identifying_assumption: string;
+  ppt_balance_checks: string;
+  ppt_manipulation_checks: string;
+  ppt_threats: string;
   ppt_pre_registered: string;
   ppt_hypotheses: string;
   ppt_sample_power: string;
@@ -297,7 +315,13 @@ const zh: Dict = {
   ppt_expand_eyebrow: "⚡ 扩展为 PPT",
   ppt_expand_desc: "按 Hunter 的开题报告框架生成 13 张 slide：一句话问题 / 为什么顶刊 / 为什么 Solvea 独家 / 实验设计 / Outcome / Hypotheses / Sample power / 实施成本 / 期刊 / 文献锚 / 风险 / 三位老师的电梯演讲。",
   ppt_generate: "生成完整提案 →",
+  ppt_generate_current: "生成当前模型 →",
+  ppt_generate_all: "同时生成三份对比 →",
   ppt_generating: "生成提案中 (~30 秒)…",
+  ppt_generating_all: "三模型生成中 (~1-2 分钟)…",
+  ppt_model_compare: "模型对比",
+  ppt_generated: "已生成",
+  ppt_not_generated: "未生成",
   ppt_nav_hint: "← → 空格切换 · Esc 退出 · 0-9 跳转",
 
   dash_tab_advisor: "💬 AI 导师",
@@ -353,6 +377,18 @@ const zh: Dict = {
   ppt_logic: "逻辑",
   ppt_treatment_arms: "处理组",
   ppt_identification: "识别策略",
+  ppt_causal_plan: "因果试验方案",
+  ppt_h_causal: "如何证明因果，而不是相关",
+  ppt_old_proposal_note: "旧提案缺少结构化因果页；请重新生成以获得完整试验方案。",
+  ppt_causal_question: "因果问题",
+  ppt_estimand: "估计量",
+  ppt_unit_analysis: "分析单位",
+  ppt_assignment: "处理分配机制",
+  ppt_counterfactual: "对照 / 反事实",
+  ppt_identifying_assumption: "识别假设",
+  ppt_balance_checks: "平衡性检验",
+  ppt_manipulation_checks: "操纵检验",
+  ppt_threats: "因果威胁与修复",
   ppt_pre_registered: "预注册",
   ppt_hypotheses: "假设",
   ppt_sample_power: "样本与功效",
@@ -478,7 +514,13 @@ const en: Dict = {
   ppt_expand_eyebrow: "⚡ EXPAND TO PPT",
   ppt_expand_desc: "Hunter's proposal framework. 13 sections: one-line question / why top-tier / why Solvea-exclusive / design / outcomes / hypotheses / sample power / cost / journals / theory / risks / 3 advisor pitches.",
   ppt_generate: "Generate full proposal →",
+  ppt_generate_current: "Generate current model →",
+  ppt_generate_all: "Generate all three for comparison →",
   ppt_generating: "Generating (~30s)…",
+  ppt_generating_all: "Generating three models (~1-2 min)…",
+  ppt_model_compare: "Model comparison",
+  ppt_generated: "Generated",
+  ppt_not_generated: "Not generated",
   ppt_nav_hint: "← → space to navigate · Esc to exit · 0-9 to jump",
 
   dash_tab_advisor: "💬 AI Advisor",
@@ -534,6 +576,18 @@ const en: Dict = {
   ppt_logic: "Logic",
   ppt_treatment_arms: "Treatment arms",
   ppt_identification: "Identification",
+  ppt_causal_plan: "CAUSAL EXPERIMENT PLAN",
+  ppt_h_causal: "How we prove causality, not correlation",
+  ppt_old_proposal_note: "This older proposal lacks a structured causal page. Regenerate it for the full experiment plan.",
+  ppt_causal_question: "Causal question",
+  ppt_estimand: "Estimand",
+  ppt_unit_analysis: "Unit of analysis",
+  ppt_assignment: "Assignment mechanism",
+  ppt_counterfactual: "Control / counterfactual",
+  ppt_identifying_assumption: "Identifying assumption",
+  ppt_balance_checks: "Balance checks",
+  ppt_manipulation_checks: "Manipulation checks",
+  ppt_threats: "Causal threats and fixes",
   ppt_pre_registered: "PRE-REGISTERED",
   ppt_hypotheses: "Hypotheses",
   ppt_sample_power: "Sample Size & Power",
@@ -659,7 +713,13 @@ const ja: Dict = {
   ppt_expand_eyebrow: "⚡ PPT に展開",
   ppt_expand_desc: "Hunter の開題報告フレームワーク。13 セクション。",
   ppt_generate: "提案を生成 →",
+  ppt_generate_current: "Generate current model →",
+  ppt_generate_all: "Generate all three for comparison →",
   ppt_generating: "生成中 (~30 秒)…",
+  ppt_generating_all: "Generating three models (~1-2 min)…",
+  ppt_model_compare: "Model comparison",
+  ppt_generated: "Generated",
+  ppt_not_generated: "Not generated",
   ppt_nav_hint: "← → スペースで移動 · Esc で終了 · 0-9 でジャンプ",
 
   dash_tab_advisor: "💬 AI Advisor",
@@ -715,6 +775,18 @@ const ja: Dict = {
   ppt_logic: "Logic",
   ppt_treatment_arms: "Treatment arms",
   ppt_identification: "Identification",
+  ppt_causal_plan: "CAUSAL EXPERIMENT PLAN",
+  ppt_h_causal: "How we prove causality, not correlation",
+  ppt_old_proposal_note: "This older proposal lacks a structured causal page. Regenerate it for the full experiment plan.",
+  ppt_causal_question: "Causal question",
+  ppt_estimand: "Estimand",
+  ppt_unit_analysis: "Unit of analysis",
+  ppt_assignment: "Assignment mechanism",
+  ppt_counterfactual: "Control / counterfactual",
+  ppt_identifying_assumption: "Identifying assumption",
+  ppt_balance_checks: "Balance checks",
+  ppt_manipulation_checks: "Manipulation checks",
+  ppt_threats: "Causal threats and fixes",
   ppt_pre_registered: "PRE-REGISTERED",
   ppt_hypotheses: "Hypotheses",
   ppt_sample_power: "Sample Size & Power",
@@ -840,7 +912,13 @@ const es: Dict = {
   ppt_expand_eyebrow: "⚡ EXPANDIR A PPT",
   ppt_expand_desc: "Marco de propuesta de Hunter. 13 secciones.",
   ppt_generate: "Generar propuesta completa →",
+  ppt_generate_current: "Generate current model →",
+  ppt_generate_all: "Generate all three for comparison →",
   ppt_generating: "Generando (~30s)…",
+  ppt_generating_all: "Generating three models (~1-2 min)…",
+  ppt_model_compare: "Model comparison",
+  ppt_generated: "Generated",
+  ppt_not_generated: "Not generated",
   ppt_nav_hint: "← → espacio para navegar · Esc para salir · 0-9 para saltar",
 
   dash_tab_advisor: "💬 AI Advisor",
@@ -896,6 +974,18 @@ const es: Dict = {
   ppt_logic: "Logic",
   ppt_treatment_arms: "Treatment arms",
   ppt_identification: "Identification",
+  ppt_causal_plan: "CAUSAL EXPERIMENT PLAN",
+  ppt_h_causal: "How we prove causality, not correlation",
+  ppt_old_proposal_note: "This older proposal lacks a structured causal page. Regenerate it for the full experiment plan.",
+  ppt_causal_question: "Causal question",
+  ppt_estimand: "Estimand",
+  ppt_unit_analysis: "Unit of analysis",
+  ppt_assignment: "Assignment mechanism",
+  ppt_counterfactual: "Control / counterfactual",
+  ppt_identifying_assumption: "Identifying assumption",
+  ppt_balance_checks: "Balance checks",
+  ppt_manipulation_checks: "Manipulation checks",
+  ppt_threats: "Causal threats and fixes",
   ppt_pre_registered: "PRE-REGISTERED",
   ppt_hypotheses: "Hypotheses",
   ppt_sample_power: "Sample Size & Power",

@@ -33,7 +33,7 @@ type Critique = {
   verdict: "ACCEPT" | "MAJOR_REVISION" | "REJECT" | string;
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://arxify-production.up.railway.app";
 
 const EXAMPLE = `我是 HKU DBA 学生，研究 LLM 客服系统。我们公司有多租户 SaaS 平台，280 个企业客户、19 亿条客服对话、870 万次 AI→人工 handoff 事件，数据覆盖 2024 年至今。我想找一个能在 6 个月内做完的研究方向，目标顶刊（JM/MarkSci/MISQ）。已经写完一篇 H3 handoff agency paradox 的 paper。`;
 

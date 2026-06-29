@@ -75,6 +75,7 @@ def init() -> None:
           status TEXT NOT NULL DEFAULT 'candidate',
           notes TEXT,
           proposal_json TEXT,           -- cached full-proposal expansion (JSON)
+          proposal_variants_json TEXT,  -- cached proposal expansions by model provider (JSON)
           proposal_generated_at TEXT,
           created_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
@@ -117,6 +118,12 @@ def migrate() -> None:
             c.execute("ALTER TABLE hypotheses ADD COLUMN content_i18n TEXT")
         if "proposal_i18n" not in cols:
             c.execute("ALTER TABLE hypotheses ADD COLUMN proposal_i18n TEXT")
+        if "proposal_variants_json" not in cols:
+            c.execute("ALTER TABLE hypotheses ADD COLUMN proposal_variants_json TEXT")
+        if "novelty_score" not in cols:
+            c.execute("ALTER TABLE hypotheses ADD COLUMN novelty_score INTEGER")
+        if "scarcity_score" not in cols:
+            c.execute("ALTER TABLE hypotheses ADD COLUMN scarcity_score INTEGER")
 
 
 init()

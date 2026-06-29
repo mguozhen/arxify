@@ -12,7 +12,7 @@ import { pickField, getDict } from "@/lib/i18n";
 type T = ReturnType<typeof getDict>;
 type Loc = "zh" | "en" | "ja" | "es";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://arxify-production.up.railway.app";
 const LAUNCH_TARGET = 100;
 
 type Status = {
@@ -36,6 +36,8 @@ type Hypothesis = {
   journal_target: string;
   feasibility_6mo: number;
   ab_test_difficulty: number;
+  novelty_score?: number | null;
+  scarcity_score?: number | null;
   status: string;
   notes: string | null;
   content_zh?: Record<string, string> | null;
@@ -325,6 +327,7 @@ function Bubble({ msg, t }: { msg: ChatMessage; t: T }) {
 // ───────────────────────────────────────────────────────────────────────
 
 const STATUS_COLOR: Record<string, string> = {
+  featured: "bg-[#5A2D8C] text-white",
   main: "bg-[#0a8060] text-white",
   shortlisted: "bg-[#ecf4f0] text-[#0a8060]",
   candidate: "bg-[#f3f4f7] text-[#4b5263]",
@@ -336,7 +339,7 @@ function HypothesesTab({ items, locale, t }: { items: Hypothesis[]; locale: Loc;
     (acc[h.status] ||= []).push(h);
     return acc;
   }, {});
-  const order = ["main", "shortlisted", "candidate", "future"];
+  const order = ["featured", "main", "shortlisted", "candidate", "future"];
 
   return (
     <div className="space-y-8">
@@ -375,9 +378,11 @@ function HypCard({ h, locale, t }: { h: Hypothesis; locale: Loc; t: T }) {
       </div>
       <h3 className="font-semibold text-[17px] leading-snug mb-2 text-[#0e1117] tracking-tight">{pickField(h, locale, "title")}</h3>
       <p className="text-[#2a3441] text-[14px] mb-4 leading-relaxed">{pickField(h, locale, "paradox")}</p>
-      <div className="flex gap-4 text-[11px] font-mono text-[#4b5263] mb-3 tabular">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-[#4b5263] mb-3 tabular">
         <span>{t.dash_feas} <span className="text-[#0a8060]">{"★".repeat(h.feasibility_6mo)}</span>{"☆".repeat(5 - h.feasibility_6mo)}</span>
         <span>{t.dash_ab} <span className="text-[#0a8060]">{"★".repeat(6 - h.ab_test_difficulty)}</span>{"☆".repeat(h.ab_test_difficulty - 1)}</span>
+        {h.novelty_score ? <span>{locale === "en" ? "Novelty" : "领先"} <span className="text-[#7c5cbf]">{"★".repeat(h.novelty_score)}</span>{"☆".repeat(5 - h.novelty_score)}</span> : null}
+        {h.scarcity_score ? <span>{locale === "en" ? "TopJrnl" : "稀缺"} <span className="text-[#7c5cbf]">{"★".repeat(h.scarcity_score)}</span>{"☆".repeat(5 - h.scarcity_score)}</span> : null}
       </div>
       <div className="flex items-center justify-between border-t border-[#e6e8ec] pt-3">
         <button
